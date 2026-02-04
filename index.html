@@ -10,14 +10,13 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Inter:wght@300;400;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
     
-    <!-- 1. LIBRARIES (Load First) -->
+    <!-- LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 
-    <!-- 2. SAFE TAILWIND CONFIG -->
     <script>
         if (window.tailwind) {
             window.tailwind.config = {
@@ -34,7 +33,6 @@
         }
     </script>
 
-    <!-- 3. CSS -->
     <style>
         :root {
             --glass-bg: rgba(15, 23, 42, 0.85);
@@ -76,7 +74,7 @@
         }
         .msg-anim { animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
-        /* Video Transition Classes */
+        /* Video Transitions */
         @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
@@ -176,6 +174,7 @@
         @media (max-width: 768px) {
             .editor-body { flex-direction: column; }
             #code-area { flex: 0 0 40%; min-height: 200px; }
+            #file-explorer-panel { width: 100%; height: 30%; }
             #copilot-sidebar { flex: 1; border-left: none; border-top: 1px solid #333; }
         }
         #code-area {
@@ -204,13 +203,12 @@
         .markdown-body pre { background: #0d1117 !important; padding: 1em; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
         .markdown-body pre code { background: transparent; padding: 0; color: inherit; }
         
-        /* FIX 4: SELECTABLE TEXT */
         .select-text { user-select: text; -webkit-user-select: text; }
         
         .hidden-ui { display: none !important; }
         .flex-ui { display: flex !important; }
         
-        /* Virtual File System Styles */
+        /* File System Styles */
         .file-list-item {
             padding: 0.5rem;
             cursor: pointer;
@@ -264,9 +262,7 @@
     </header>
 
     <!-- MAIN CHAT AREA -->
-    <main id="chat-container" class="flex-1 overflow-y-auto pt-20 pb-32 px-4 z-10 scroll-smooth max-w-4xl mx-auto w-full space-y-3 select-text">
-        <!-- Messages injected here -->
-    </main>
+    <main id="chat-container" class="flex-1 overflow-y-auto pt-20 pb-32 px-4 z-10 scroll-smooth max-w-4xl mx-auto w-full space-y-3 select-text"></main>
 
     <!-- INPUT AREA -->
     <div class="fixed bottom-0 left-0 w-full z-30 glass-panel border-t border-white/10 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,20px))] px-4">
@@ -307,7 +303,7 @@
             <!-- FIX 5: ONLINE RADIO TERMINAL -->
             <div id="tab-radio" class="hidden">
                 <div class="relative mb-4">
-                    <input type="text" id="radio-search" placeholder="Type genre (e.g. 'Techno', 'Jazz')..." class="w-full bg-black/50 border border-white/10 rounded p-2 text-white text-xs focus:border-cyan-500 outline-none font-mono mb-2">
+                    <input type="text" id="radio-search" placeholder="Search genres (e.g., 'Techno', 'Jazz', 'Cyberpunk')..." class="w-full bg-black/50 border border-white/10 rounded p-2 text-white text-xs focus:border-cyan-500 outline-none font-mono mb-2">
                     <div id="radio-results" class="max-h-40 overflow-y-auto space-y-1"></div>
                 </div>
             </div>
@@ -318,7 +314,7 @@
     <div id="admin-panel" class="hidden-ui fixed bottom-20 right-4 left-4 md:left-auto md:w-80 glass-panel rounded-xl border border-red-500/30 p-4 z-50 shadow-2xl">
         <h3 class="text-red-400 font-header text-xs font-bold mb-3 uppercase flex justify-between">System Console <span id="gen-disp">GEN 1</span></h3>
         <div class="space-y-3">
-            <!-- FIX 3: ZHIPU API SELECTOR -->
+            <!-- ZHIPU API SELECTOR -->
             <div>
                 <label class="text-[9px] text-gray-500 uppercase font-bold">AI Provider</label>
                 <select id="api-provider-select" class="w-full bg-black/50 border border-white/10 rounded p-2 text-white text-xs focus:border-red-500 outline-none mb-2">
@@ -358,7 +354,7 @@
     <div id="code-editor-overlay" class="hidden-ui">
         <div class="h-12 border-b border-white/10 flex items-center justify-between px-4 bg-[#0d1117]">
             <div class="flex gap-2">
-                <!-- FIX 7: BUILD REPOSITORY FILES TABS -->
+                <!-- FIX 4: BUILD REPOSITORY FILES TABS -->
                 <button id="tab-files-btn" class="text-[10px] bg-black border border-white/20 hover:bg-white hover:text-black rounded px-2 transition-colors">📂 FILES</button>
                 <button id="tab-editor-btn" class="text-[10px] bg-white text-black border border-white/20 hover:bg-gray-800 rounded px-2 transition-colors">📝 EDITOR</button>
             </div>
@@ -369,7 +365,7 @@
             </div>
         </div>
         <div class="editor-body">
-            <!-- FIX 7: VIRTUAL FILE EXPLORER -->
+            <!-- FIX 4: VIRTUAL FILE EXPLORER -->
             <div id="file-explorer-panel" class="hidden-ui flex-col border-r border-white/10 bg-[#0d1117] w-64 flex-shrink-0 p-4">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs font-bold text-gray-300">PROJECT FILES</span>
@@ -417,13 +413,13 @@
     <script>
         /* --- CONFIGURATION & STATE --- */
         const DEFAULT_MODEL = "llama-3.3-70b-versatile"; 
-        const ZHIPU_MODEL = "glm-4"; 
+        const ZHIPU_MODEL = "glm-4";
         
         let API_PROVIDER = localStorage.getItem('termos_provider') || "groq";
         let GROQ_API_KEY = localStorage.getItem('termos_groq_key') || "";
         let ZHIPU_API_KEY = localStorage.getItem('termos_zhipu_key') || "";
         
-        // FIX 7: Virtual File System
+        // FIX 4: Virtual File System
         let projectFiles = JSON.parse(localStorage.getItem('termos_files') || '[]');
         let currentFileIndex = 0;
 
@@ -476,10 +472,16 @@
             tabEditor: document.getElementById('tab-editor-btn')
         };
 
-        // --- SOUND FX ---
-        const AudioFX = {
-            ctx: new (window.AudioContext || window.webkitAudioContext)(),
+        // --- SOUND FX (FIX 1: LAZY INITIALIZATION) ---
+        let AudioFX = {
+            ctx: null, // Lazy init
+            init: function() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
             playTone: function(freq, type, duration) {
+                this.init(); // Ensure context exists
                 if(this.ctx.state === 'suspended') this.ctx.resume();
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
@@ -501,6 +503,8 @@
         /* --- INITIALIZATION --- */
         window.addEventListener('load', () => {
             try {
+                console.log("TermOS Booting...");
+                
                 // UI Listeners
                 document.getElementById('btn-media-toggle').addEventListener('click', toggleMedia);
                 document.getElementById('btn-profile').addEventListener('click', toggleProfile);
@@ -523,11 +527,11 @@
                 document.getElementById('btn-scan-code').addEventListener('click', scanAndFixCode);
                 document.getElementById('btn-copilot-gen').addEventListener('click', sendCopilot);
                 
-                // FIX 7: File Manager Listeners
+                // FIX 4: File Manager Listeners
                 UI.tabFiles.addEventListener('click', () => { UI.filePanel.classList.remove('hidden-ui'); UI.filePanel.classList.add('flex-ui'); UI.codeArea.classList.add('hidden-ui'); });
                 UI.tabEditor.addEventListener('click', () => { UI.filePanel.classList.add('hidden-ui'); UI.filePanel.classList.remove('flex-ui'); UI.codeArea.classList.remove('hidden-ui'); UI.codeArea.classList.add('flex-ui'); });
                 document.getElementById('btn-new-file').addEventListener('click', createNewFile);
-                UI.codeArea.addEventListener('input', () => { if(projectFiles[currentFileIndex]) projectFiles[currentFileIndex].content = UI.codeArea.value; saveFiles(); });
+                UI.codeArea.addEventListener('input', () => { if(projectFiles[currentFileIndex]) { projectFiles[currentFileIndex].content = UI.codeArea.value; saveFiles(); renderFileList(); } });
                 
                 // FIX 5: Radio Search
                 document.getElementById('radio-search').addEventListener('input', handleRadioSearch);
@@ -561,6 +565,7 @@
                 // Init State
                 if(UI.providerSelect) UI.providerSelect.value = API_PROVIDER;
                 if(UI.apiKeyInput) UI.apiKeyInput.value = (API_PROVIDER === 'groq' ? GROQ_API_KEY : ZHIPU_API_KEY);
+                renderFileList();
 
                 // Start Boot Sequence
                 setTimeout(() => {
@@ -597,19 +602,20 @@
 
         /* --- API HANDLING (SUPPORT FOR ZHIPU) --- */
         async function safeFetch(messages, jsonMode = false) {
-            const key = API_PROVIDER === 'groq' ? GROQ_API_KEY : ZHIPU_API_KEY;
+            const provider = API_PROVIDER;
+            const key = provider === 'groq' ? GROQ_API_KEY : ZHIPU_API_KEY;
             if (!key) throw new Error("API Key Missing");
 
-            let url, body, headers;
-            let model = DEFAULT_MODEL;
+            let url, body, headers, model;
 
-            if (API_PROVIDER === 'zhipu') {
+            if (provider === 'zhipu') {
                 url = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
                 model = ZHIPU_MODEL;
                 body = JSON.stringify({ model: model, messages: messages });
                 headers = { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" };
             } else {
                 url = "https://api.groq.com/openai/v1/chat/completions";
+                model = DEFAULT_MODEL;
                 body = JSON.stringify({
                     model: model,
                     messages: messages,
@@ -625,9 +631,11 @@
                 const data = await response.json();
 
                 if (!response.ok) {
+                    // FIX 2: Better Error Handling
                     const errMsg = data.error?.message || data.message || `HTTP ${response.status}`;
                     if(response.status === 401) throw new Error("Invalid API Key");
                     if(response.status === 429) throw new Error("Rate Limit: Too Many Requests");
+                    if(response.status === 400 && errMsg.includes('model')) throw new Error("Unknown Model: Please check model code.");
                     throw new Error(errMsg);
                 }
 
@@ -718,7 +726,6 @@
                 delete peers[remoteUser];
                 const el = document.getElementById(`vid-remote-${remoteUser}`);
                 if(el) {
-                    // FIX 2: Add exit animation before removal
                     el.classList.add('video-exit');
                     setTimeout(() => el.remove(), 300);
                 }
@@ -731,7 +738,7 @@
 
             const div = document.createElement('div');
             div.id = `vid-remote-${remoteUser}`;
-            div.className = "video-container remote video-enter"; // FIX 2: Add enter class
+            div.className = "video-container remote video-enter"; 
             div.innerHTML = `<video autoplay playsinline muted></video><div class="remote-label">${remoteUser}</div>`;
             div.querySelector('video').srcObject = stream;
             UI.videoGrid.appendChild(div);
@@ -765,7 +772,7 @@
                 localStream = null;
             }
             
-            // FIX 2: Remove all remote videos with transition
+            // FIX 2: Smooth removal of videos
             for (let key in peers) {
                 removeUserVideo(key);
             }
@@ -856,7 +863,6 @@
             };
 
             pc.ontrack = (e) => {
-                // FIX 2: Use new add function with animation
                 addRemoteVideoElement(remoteUser, e.streams[0]);
             };
 
@@ -877,7 +883,7 @@
         function addLocalVideo(stream) {
             const div = document.createElement('div');
             div.id = "vid-local";
-            div.className = "video-container local video-enter"; // FIX 2: Add enter class
+            div.className = "video-container local video-enter";
             div.innerHTML = `<video autoplay muted playsinline></video><div class="remote-label">ME</div>`;
             div.querySelector('video').srcObject = stream;
             UI.videoGrid.appendChild(div);
@@ -913,7 +919,8 @@
             { name: "Cyberpunk", genre: "cyberpunk dark", url: "https://streams.ilovemusic.de/iloveradio17.mp3" },
             { name: "Techno Bunker", genre: "techno industrial", url: "https://streams.ilovemusic.de/iloveradio14.mp3" },
             { name: "Deep House", genre: "house deep", url: "https://streams.ilovemusic.de/iloveradio13.mp3" },
-            { name: "Space Ambient", genre: "ambient space", url: "https://streams.ilovemusic.de/iloveradio08.mp3" }
+            { name: "Space Ambient", genre: "ambient space", url: "https://streams.ilovemusic.de/iloveradio08.mp3" },
+            { name: "Classical Focus", genre: "piano classical", url: "https://streams.ilovemusic.de/iloveradio11.mp3" }
         ];
 
         function handleRadioSearch() {
@@ -956,8 +963,10 @@
             scrollToCopilotBottom();
 
             try {
+                // FIX 2: Use dynamic model selection in prompt to ensure AI knows what to use
+                const providerName = API_PROVIDER === 'zhipu' ? "GLM" : "Llama";
                 const messages = [
-                    { role: "system", content: "You are a senior software engineer. Analyze the code. Identify potential bugs, security issues, and suggest improvements. Format as Markdown." },
+                    { role: "system", content: `You are a senior software engineer using the ${providerName} model. Analyze the code for bugs, security issues, and improvements. Format as Markdown.` },
                     { role: "user", content: `Code:\n${code.substring(code.length - 3000)}` }
                 ];
                 
@@ -965,32 +974,9 @@
                 loadingDiv.remove();
                 
                 addAIMessage(reply);
-            } catch(e) {
+            } catch (e) {
                 loadingDiv.innerText = "Scan Failed: " + e.message;
-                loadingDiv.classList.add("text-red-500");
-            }
-        }
-
-        /* --- FIX 8: TERMINAL LINE IN COPILOT --- */
-        function executeCopilotCommand() {
-            const cmd = UI.copilotCmd.value.trim().toLowerCase();
-            if(!cmd) return;
-
-            UI.copilotCmd.value = '';
-            
-            if(cmd === '/fix' || cmd === '/scan') {
-                scanAndFixCode();
-            } else if(cmd === '/explain') {
-                const code = UI.codeArea.value;
-                if(code) {
-                    const uDiv = document.createElement('div');
-                    uDiv.className = "flex justify-end text-gray-400 text-[10px]";
-                    uDiv.innerText = `/${cmd}`;
-                    UI.copilotChat.appendChild(uDiv);
-                    processAICommand("Explain this code:\n" + code.substring(code.length - 1000));
-                }
-            } else {
-                addSystemMessage(`Unknown Copilot Command: ${cmd}`, "warning");
+                loadingDiv.classList.add('text-red-500');
             }
         }
 
@@ -1115,7 +1101,7 @@
                 </div>
             `;
             UI.copilotChat.appendChild(div);
-            scrollToCopilotBottom(); // FIX 1: Use dedicated scroll function
+            scrollToCopilotBottom();
             highlightCode(); 
         }
 
@@ -1164,9 +1150,8 @@
             }
         }
 
-        /* --- COPILOT / IDE (FIX 1 SCROLL) --- */
+        /* --- COPILOT / IDE --- */
         function scrollToCopilotBottom() {
-            // FIX 1: Ensure scroll goes to bottom
             if(UI.copilotChat) {
                 UI.copilotChat.scrollTop = UI.copilotChat.scrollHeight;
             }
@@ -1218,8 +1203,9 @@
 
             try {
                 const codeContext = UI.codeArea.value.substring(UI.codeArea.value.length - 2000);
+                const providerName = API_PROVIDER === 'zhipu' ? "GLM" : "Llama";
                 const messages = [
-                    { role: "system", content: "You are an expert frontend engineer. Return ONLY code block, no explanation." },
+                    { role: "system", content: `You are an expert frontend engineer. Return ONLY code block, no explanation. Use the ${providerName} model.` },
                     { role: "user", content: `Current Code Context:\n${codeContext}\n\nRequest: ${prompt}` }
                 ];
                 
@@ -1270,18 +1256,42 @@
             return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
         }
 
-        /* --- FIX 7: VIRTUAL FILE SYSTEM --- */
+        /* --- FIX 8: TERMINAL LINE IN COPILOT --- */
+        function executeCopilotCommand() {
+            const cmd = UI.copilotCmd.value.trim().toLowerCase();
+            if(!cmd) return;
+
+            UI.copilotCmd.value = '';
+            
+            if(cmd === '/fix' || cmd === '/scan') {
+                scanAndFixCode();
+            } else if(cmd === '/explain') {
+                const code = UI.codeArea.value;
+                if(code) {
+                    const uDiv = document.createElement('div');
+                    uDiv.className = "flex justify-end text-gray-400 text-[10px]";
+                    uDiv.innerText = `/${cmd}`;
+                    UI.copilotChat.appendChild(uDiv);
+                    scrollToCopilotBottom();
+                    processAICommand("Explain this code:\n" + code.substring(code.length - 1000));
+                }
+            } else {
+                addSystemMessage(`Unknown Copilot Command: ${cmd}`, "warning");
+            }
+        }
+
+        /* --- FIX 4 & 3: VIRTUAL FILE SYSTEM & GITHUB --- */
         function saveFiles() {
             localStorage.setItem('termos_files', JSON.stringify(projectFiles));
-            renderFileList();
         }
 
         function createNewFile() {
             const name = prompt("Enter filename (e.g. index.html):");
             if(name) {
-                projectFiles.push({ name: name, content: "" });
+                projectFiles.push({ name: name, content: "", sha: null });
                 currentFileIndex = projectFiles.length - 1;
                 saveFiles();
+                renderFileList();
                 UI.codeArea.value = ""; // Clear editor for new file
             }
         }
@@ -1301,10 +1311,9 @@
             });
         }
 
-        /* --- GITHUB (FIX 7: BUILD REPOS) --- */
         async function pushToGitHub() {
-            if(!projectFiles[currentFileIndex]) {
-                alert("No file selected to push.");
+            if(projectFiles.length === 0) {
+                alert("No files to push. Create a file in the IDE first.");
                 return;
             }
 
@@ -1315,68 +1324,60 @@
             const token = prompt("Personal Access Token (needs repo scope):");
             if(!token) return;
 
-            const path = projectFiles[currentFileIndex].name;
-            const content = UI.codeArea.value; // Push content of current file
-            const encodedContent = btoa(unescape(encodeURIComponent(content)));
-
-            let defaultBranch = "main"; 
             try {
+                // 1. Get Repo Info (to detect default branch)
                 const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
                     headers: { 'Authorization': `token ${token}` }
                 });
-                
                 if (!repoRes.ok) {
-                    if(repoRes.status === 404) {
-                        alert("❌ Repository Not Found.");
-                        return;
-                    }
-                    const err = await repoRes.json();
-                    throw new Error(err.message);
+                    if(repoRes.status === 404) alert("❌ Repository Not Found.");
+                    else alert("❌ Authentication Failed.");
+                    return;
                 }
-
                 const repoData = await repoRes.json();
-                defaultBranch = repoData.default_branch;
+                const defaultBranch = repoData.default_branch;
 
-            } catch (e) {
-                alert("❌ Connection Error: " + e.message);
-                return;
-            }
+                // 2. Push all files in projectFiles
+                let pushPromises = [];
+                
+                for (const file of projectFiles) {
+                    const path = file.name;
+                    const content = file.content;
+                    const encodedContent = btoa(unescape(encodeURIComponent(content)));
+                    
+                    pushPromises.push(
+                        (async () => {
+                            let sha = null;
+                            // Check if file exists
+                            try {
+                                const fileRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${defaultBranch}`, {
+                                    headers: { 'Authorization': `token ${token}` }
+                                });
+                                if (fileRes.ok) {
+                                    const fileData = await fileRes.json();
+                                    sha = fileData.sha;
+                                }
+                            } catch(e) {}
 
-            let sha = null;
-            try {
-                const fileRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${defaultBranch}`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
+                            const body = { message: "Update from TermOS", content: encodedContent, branch: defaultBranch };
+                            if (sha) body.sha = sha;
 
-                if (fileRes.ok) {
-                    const fileData = await fileRes.json();
-                    sha = fileData.sha;
-                } else if (fileRes.status !== 404) {
-                    throw new Error(`File Check Failed: ${fileRes.status}`);
+                            const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                                method: 'PUT',
+                                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify(body)
+                            });
+
+                            return putRes.ok ? `✅ ${file.name}` : `❌ ${file.name}`;
+                        })()
+                    );
                 }
+
+                const results = await Promise.all(pushPromises);
+                alert(results.join('\n'));
+
             } catch (e) {
-                alert("❌ Error checking file: " + e.message);
-                return;
-            }
-
-            try {
-                const body = { message: "Update from TermOS", content: encodedContent, branch: defaultBranch };
-                if (sha) body.sha = sha; 
-
-                const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-
-                if(putRes.ok) {
-                    alert("✅ Successfully pushed to GitHub!");
-                } else {
-                    const err = await putRes.json();
-                    alert("❌ GitHub Error: " + err.message);
-                }
-            } catch (e) {
-                alert("❌ Network Error: " + e.message);
+                alert("❌ Error: " + e.message);
             }
         }
 
@@ -1389,9 +1390,10 @@
             AudioFX.system();
             
             try {
+                const providerName = API_PROVIDER === 'zhipu' ? "GLM" : "Llama";
                 const context = `Time: ${new Date().toLocaleTimeString()}, User: ${userProfile.name}, Room: ${currentRoom}`;
                 const messages = [
-                    { role: "system", content: `You are TermOS Kernel. ${context}. Suggest a system update or interesting fact about galaxy.` },
+                    { role: "system", content: `You are TermOS Kernel using the ${providerName} model. ${context}. Suggest a system update or interesting fact about galaxy.` },
                     { role: "user", content: "Analyze system state." }
                 ];
                 
@@ -1608,13 +1610,15 @@
             document.getElementById('tab-radio').classList.add('hidden');
             document.getElementById('tab-'+tab).classList.remove('hidden');
             if(tab === 'radio') {
-                 // FIX 5: Initial load for radio
-                 handleRadioSearch(); 
+                 handleRadioSearch();
             }
         }
 
         let audioObj = new Audio();
         function playRadio(el, url) {
+            // FIX 1: Initialize Audio Context on Interaction
+            AudioFX.init();
+
             if(audioObj.src === url && !audioObj.paused) {
                 audioObj.pause();
                 document.querySelectorAll('.bg-white\\/20').forEach(d => d.classList.remove('bg-white/20'));
