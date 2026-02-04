@@ -314,4 +314,801 @@ function stopWebRTC() {
     UI.btnVideoDisable.classList.remove('flex-ui');
     UI.btnVideoEnable.classList.remove('hidden-ui');
 
-    addSystemMessage
+    addSystemMessage("📹 Uplink Terminated.", "warning");
+    
+    broadcastWebRTC({ type: 'video_stop' });
+}
+
+async function handleOffer(data) {
+    const sender = data.user;
+    if(sender === userProfile.name) return;
+
+    if (peers[sender]) {
+        const pc = peers[sender];
+        if (pc.signalingState === 'have-local-offer') {
+             await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+             const answer = await pc.createAnswer();
+             await pc.setLocalDescription(answer);
+             broadcastWebRTC({ type: 'answer', sdp: answer, target: sender });
+             return;
+        }
+    }
+
+    const pc = createPeerConnection(sender);
+    if(pc) {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        broadcastWebRTC({ type: 'answer', sdp: answer, target: sender });
+    }
+}
+
+async function handleAnswer(data) {
+    const sender = data.user;
+    const pc = peers[sender];
+    if(pc) await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+}
+
+async function handleCandidate(data) {
+    const sender = data.user;
+    const pc = peers[sender];
+    if(pc) {
+        try {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (e) {
+            console.log("Candidate Error (Ignored)", e);
+        }
+    }
+}
+
+function handleVideoReady(sender) {
+    if(sender === userProfile.name) return;
+    if (localStream && !peers[sender]) {
+        console.log(`Saw ${sender} ready. Initiating offer...`);
+        initiateCall(sender);
+    }
+}
+
+async function initiateCall(remoteUser) {
+    if(peers[remoteUser]) return; 
+
+    const pc = createPeerConnection(remoteUser);
+    if(!pc) return;
+
+    try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        broadcastWebRTC({ type: 'offer', sdp: offer, target: remoteUser });
+    } catch(e) {
+        console.error("Offer creation failed", e);
+    }
+}
+
+function createPeerConnection(remoteUser) {
+    const pc = new RTCPeerConnection(rtcConfig);
+    peers[remoteUser] = pc;
+
+    pc.onicecandidate = (e) => {
+        if(e.candidate) {
+            broadcastWebRTC({ type: 'candidate', candidate: e.candidate, target: remoteUser });
+        }
+    };
+
+    pc.ontrack = (e) => {
+        const el = document.getElementById(`vid-remote-${remoteUser}`);
+        if(el) return; 
+
+        const div = document.createElement('div');
+        div.id = `vid-remote-${remoteUser}`;
+        div.className = "video-container remote";
+        div.innerHTML = `<video autoplay playsinline muted></video><div class="remote-label">${remoteUser}</div>`;
+        div.querySelector('video').srcObject = e.streams[0];
+        UI.videoGrid.appendChild(div);
+        AudioFX.system();
+    };
+
+    pc.onconnectionstatechange = () => {
+        console.log(`Connection state with ${remoteUser}: ${pc.connectionState}`);
+        if(pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+            delete peers[remoteUser];
+            const el = document.getElementById(`vid-remote-${remoteUser}`);
+            if(el) el.remove();
+        }
+    }
+
+    if(localStream) {
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    }
+
+    return pc;
+}
+
+function addLocalVideo(stream) {
+    const div = document.createElement('div');
+    div.id = "vid-local";
+    div.className = "video-container local";
+    div.innerHTML = `<video autoplay muted playsinline></video><div class="remote-label">ME</div>`;
+    div.querySelector('video').srcObject = stream;
+    UI.videoGrid.appendChild(div);
+}
+
+function broadcastWebRTC(payload) {
+    if(mqttClient && mqttClient.isConnected()) {
+        const topic = currentRoom === "public" ? "termos/public" : `termos/rooms/${currentRoom}`;
+        const fullPayload = {
+            ...payload,
+            user: userProfile.name,
+            type: 'webrtc' 
+        };
+        
+        const msg = new Paho.MQTT.Message(JSON.stringify(fullPayload));
+        msg.destinationName = topic;
+        mqttClient.send(msg);
+    }
+}
+
+function handleWebRTCMessage(data) {
+    const type = data.type; 
+    if(type === 'video_ready') handleVideoReady(data.user);
+    else if(type === 'video_stop') handleLeaveCall(data.user);
+    else if(type === 'offer') handleOffer(data);
+    else if(type === 'answer') handleAnswer(data);
+    else if(type === 'candidate') handleCandidate(data);
+}
+
+function handleLeaveCall(remoteUser) {
+    if(peers[remoteUser]) {
+        peers[remoteUser].close();
+        delete peers[remoteUser];
+        const el = document.getElementById(`vid-remote-${remoteUser}`);
+        if(el) el.remove();
+    }
+}
+
+/* --- SYSTEM MODULES --- */
+const SystemRebuilder = {
+    install: function(name) {
+        name = name.toLowerCase();
+        switch(name) {
+            case 'matrix':
+                this.toggleMatrix();
+                break;
+            case 'neon':
+                document.documentElement.style.setProperty('--accent-primary', '#d946ef');
+                document.documentElement.style.setProperty('--msg-user-bg', '#be185d');
+                addSystemMessage("Theme: Neon Pink", "info");
+                break;
+            case 'cyber':
+                document.documentElement.style.setProperty('--accent-primary', '#facc15');
+                document.documentElement.style.setProperty('--msg-user-bg', '#ca8a04');
+                addSystemMessage("Theme: Cyber Yellow", "info");
+                break;
+            default:
+                addSystemMessage("Module not found: " + name, "warning");
+        }
+    },
+    toggleMatrix: function() {
+        const mCanvas = document.getElementById('matrix-canvas');
+        if(mCanvas.style.display === 'block') {
+            mCanvas.style.display = 'none';
+            addSystemMessage("Module Matrix: Disabled", "warning");
+        } else {
+            mCanvas.style.display = 'block';
+            initMatrix(); 
+            addSystemMessage("Module Matrix: Active", "info");
+        }
+    }
+};
+
+/* --- MARKDOWN PARSING --- */
+function parseMarkdown(text) {
+    return marked.parse(text);
+}
+
+function highlightCode() {
+    document.querySelectorAll('pre code').forEach((el) => {
+        hljs.highlightElement(el);
+    });
+}
+
+/* --- UI COMPONENTS --- */
+function addSystemMessage(text, type = 'info') {
+    const div = document.createElement('div');
+    div.className = "flex justify-center my-3 z-10 msg-anim";
+    
+    let bg = "bg-purple-900/30 border-purple-500/30";
+    let icon = "ℹ️";
+    
+    if(type === 'error') { 
+        bg = "bg-red-900/30 border-red-500/50 api-error-pulse"; 
+        icon = "⚠️";
+    }
+    if(type === 'warning') { bg = "bg-yellow-900/30 border-yellow-500/30"; icon = "⚡"; }
+    if(type === 'join') { bg = "bg-green-900/30 border-green-500/30"; icon = "➕"; }
+
+    div.innerHTML = `<span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border ${bg} flex items-center gap-2">${icon} ${text}</span>`;
+    UI.chat.appendChild(div);
+    scrollToBottom();
+}
+
+function addUserMessage(text, isMe, senderName, senderAvatar) {
+    const div = document.createElement('div');
+    div.className = `flex gap-3 my-1 msg-anim ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
+    
+    let avatarHTML = `<div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">?</div>`;
+    
+    if (senderAvatar) {
+        if(senderAvatar.startsWith('data:') || senderAvatar.startsWith('http')) {
+            avatarHTML = `<div class="w-8 h-8 rounded-full overflow-hidden border border-white/20 shrink-0"><img src="${senderAvatar}" class="w-full h-full object-cover"></div>`;
+        } else {
+            avatarHTML = `<div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-lg shrink-0 border border-white/10">${senderAvatar}</div>`;
+        }
+    } else {
+        avatarHTML = `<div class="w-8 h-8 rounded-full bg-${isMe?'purple':'cyan'}-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">${senderName.substring(0,2).toUpperCase()}</div>`;
+    }
+
+    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    if(isMe) {
+        div.innerHTML = `
+            ${avatarHTML}
+            <div class="flex flex-col items-end max-w-[80%]">
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-2.5 rounded-2xl rounded-tr-none text-sm shadow-md break-words">${escapeHtml(text)}</div>
+                <div class="text-[9px] text-gray-500 mt-0.5 mr-1">${time}</div>
+            </div>
+        `;
+    } else {
+        div.innerHTML = `
+            ${avatarHTML}
+            <div class="flex flex-col items-start max-w-[80%]">
+                <div class="flex items-center gap-2 mb-0.5">
+                    <span class="text-[10px] text-cyan-400 font-bold">${escapeHtml(senderName)}</span>
+                </div>
+                <div class="bg-white/10 border border-white/5 text-gray-200 p-2.5 rounded-2xl rounded-tl-none text-sm shadow-md break-words">${escapeHtml(text)}</div>
+                <div class="text-[9px] text-gray-500 mt-0.5 ml-1">${time}</div>
+            </div>
+        `;
+    }
+    
+    UI.chat.appendChild(div);
+    scrollToBottom();
+}
+
+function addAIMessage(text) {
+    const div = document.createElement('div');
+    div.className = "flex gap-3 my-2 msg-anim";
+    const htmlContent = parseMarkdown(text);
+    
+    div.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0">AI</div>
+        <div class="flex-1 bg-slate-800/50 backdrop-blur border border-cyan-500/20 p-3 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md">
+            <div class="markdown-body text-xs">${htmlContent}</div>
+        </div>
+    `;
+    UI.chat.appendChild(div);
+    scrollToBottom();
+    highlightCode(); 
+}
+
+function addThinking(id, label = "AI") {
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = "flex gap-3 my-2 msg-anim";
+    div.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center animate-pulse text-[10px] font-bold">${label}</div>
+        <div class="flex items-center gap-1 h-8 bg-white/5 px-3 rounded-full">
+            <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></div>
+            <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+        </div>
+    `;
+    UI.chat.appendChild(div);
+    scrollToBottom();
+}
+
+function removeThinking(id) {
+    const el = document.getElementById(id);
+    if(el) el.remove();
+}
+
+/* --- PERSISTENCE --- */
+function saveToHistory(msgObj) {
+    try {
+        let history = JSON.parse(localStorage.getItem('termos_chat_history') || '[]');
+        history.push(msgObj);
+        if(history.length > 50) history.shift(); 
+        localStorage.setItem('termos_chat_history', JSON.stringify(history));
+    } catch(e) {
+        localStorage.removeItem('termos_chat_history');
+    }
+}
+
+function loadHistory() {
+    try {
+        const history = JSON.parse(localStorage.getItem('termos_chat_history') || '[]');
+        history.forEach(msg => {
+            if(msg.type === 'chat') addUserMessage(msg.text, msg.isMe, msg.user, null);
+        });
+        if(history.length > 0) addSystemMessage(`Restored ${history.length} messages from local cache.`, "info");
+    } catch(e) {
+        console.error("History load error", e);
+    }
+}
+
+/* --- COPILOT / IDE --- */
+function toggleCodeEditor() {
+    const isHidden = UI.codeOverlay.classList.contains('hidden-ui');
+    
+    if (isHidden) {
+        UI.codeArea.value = document.documentElement.outerHTML;
+        UI.codeOverlay.classList.remove('hidden-ui');
+        UI.codeOverlay.classList.add('flex-ui');
+        UI.copilotInput.focus();
+    } else {
+        UI.codeOverlay.classList.add('hidden-ui');
+        UI.codeOverlay.classList.remove('flex-ui');
+        UI.input.focus();
+    }
+}
+
+function openKernelInput() {
+    if (UI.codeOverlay.classList.contains('hidden-ui')) toggleCodeEditor();
+    setTimeout(() => UI.copilotInput.focus(), 100);
+}
+
+async function sendCopilot() {
+    const prompt = UI.copilotInput.value.trim();
+    if(!prompt) return;
+    
+    UI.copilotInput.value = '';
+    const uDiv = document.createElement('div');
+    uDiv.className = "flex justify-end";
+    uDiv.innerHTML = `<div class="bg-purple-600 text-white p-2 rounded-lg text-xs max-w-[90%] break-words">${escapeHtml(prompt)}</div>`;
+    UI.copilotChat.appendChild(uDiv);
+
+    const tDiv = document.createElement('div');
+    tDiv.className = "text-cyan-500 text-xs italic animate-pulse";
+    tDiv.innerText = "Generating...";
+    UI.copilotChat.appendChild(tDiv);
+    UI.copilotChat.scrollTop = UI.copilotChat.scrollHeight;
+
+    try {
+        const codeContext = UI.codeArea.value.substring(UI.codeArea.value.length - 2000);
+        const messages = [
+            { role: "system", content: "You are an expert frontend engineer. Return ONLY code block, no explanation." },
+            { role: "user", content: `Current Code Context:\n${codeContext}\n\nRequest: ${prompt}` }
+        ];
+        
+        let reply = await safeFetch(messages);
+        if(reply.includes('```')) {
+            reply = reply.split('```')[1];
+            reply = reply.replace(/^(javascript|html|css)\n/, '');
+        }
+
+        tDiv.remove();
+        const aDiv = document.createElement('div');
+        aDiv.className = "flex gap-2";
+        aDiv.innerHTML = `
+            <div class="w-6 h-6 rounded bg-cyan-600 flex items-center justify-center text-[10px] text-white shrink-0">AI</div>
+            <div class="bg-black/40 border border-cyan-500/30 p-2 rounded text-[10px] font-mono text-cyan-100 max-h-40 overflow-y-auto w-full">${escapeHtml(reply)}</div>
+        `;
+        UI.copilotChat.appendChild(aDiv);
+        
+        const btnDiv = document.createElement('div');
+        btnDiv.className = "text-center my-2";
+        btnDiv.innerHTML = `<button onclick="applyCode(\`${escapeJs(reply)}\`)" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] px-3 py-1 rounded shadow-lg">APPLY PATCH</button>`;
+        UI.copilotChat.appendChild(btnDiv);
+
+    } catch (e) {
+        tDiv.innerText = "Error: " + e.message;
+        tDiv.classList.add('text-red-500');
+    }
+}
+
+function applyCode(code) {
+    const cursorPos = UI.codeArea.selectionStart;
+    const text = UI.codeArea.value;
+    const newText = text.slice(0, cursorPos) + "\n" + code + "\n" + text.slice(cursorPos);
+    UI.codeArea.value = newText;
+    addSystemMessage("Code applied to buffer.", "info");
+}
+
+function escapeJs(str) {
+    return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+}
+
+/* --- FIXED GITHUB EVOLUTION --- */
+async function pushToGitHub() {
+    const owner = prompt("GitHub Username:");
+    if(!owner) return;
+    const repo = prompt("Repository Name:");
+    if(!repo) return;
+    const token = prompt("Personal Access Token (needs repo scope):");
+    if(!token) return;
+
+    const path = "index.html";
+    const content = UI.codeArea.value;
+    const encodedContent = btoa(unescape(encodeURIComponent(content)));
+
+    let defaultBranch = "main"; 
+    try {
+        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        
+        if (!repoRes.ok) {
+            if(repoRes.status === 404) {
+                alert("❌ Repository Not Found.\nPlease check the Username and Repository Name spelling.");
+                return;
+            }
+            if(repoRes.status === 401 || repoRes.status === 403) {
+                alert("❌ Authentication Failed.\nCheck your Token permissions (needs 'repo' scope).");
+                return;
+            }
+            const err = await repoRes.json();
+            throw new Error(err.message);
+        }
+
+        const repoData = await repoRes.json();
+        defaultBranch = repoData.default_branch;
+        console.log("Default Branch detected:", defaultBranch);
+
+    } catch (e) {
+        alert("❌ Connection Error: " + e.message);
+        return;
+    }
+
+    let sha = null;
+    try {
+        const fileRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${defaultBranch}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+
+        if (fileRes.ok) {
+            const fileData = await fileRes.json();
+            sha = fileData.sha;
+        } else if (fileRes.status !== 404) {
+            throw new Error(`File Check Failed: ${fileRes.status}`);
+        }
+    } catch (e) {
+        alert("❌ Error checking file: " + e.message);
+        return;
+    }
+
+    try {
+        const body = {
+            message: "Update from TermOS",
+            content: encodedContent,
+            branch: defaultBranch
+        };
+        if (sha) body.sha = sha; 
+
+        const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if(putRes.ok) {
+            alert("✅ Successfully pushed to GitHub!");
+        } else {
+            const err = await putRes.json();
+            alert("❌ GitHub Error: " + err.message);
+        }
+    } catch (e) {
+        alert("❌ Network Error: " + e.message);
+    }
+}
+
+/* --- KERNEL THOUGHT --- */
+async function triggerKernelThought() {
+    if(!GROQ_API_KEY) { toggleAdmin(); return; }
+    
+    const id = 'kernel-' + Date.now();
+    addThinking(id, "OS");
+    AudioFX.system();
+    
+    try {
+        const context = `Time: ${new Date().toLocaleTimeString()}, User: ${userProfile.name}, Room: ${currentRoom}`;
+        const messages = [
+            { role: "system", content: `You are TermOS Kernel. ${context}. Suggest a system update or interesting fact about galaxy.` },
+            { role: "user", content: "Analyze system state." }
+        ];
+        
+        const reply = await safeFetch(messages);
+        removeThinking(id);
+        
+        const div = document.createElement('div');
+        div.className = "flex gap-3 my-4 msg-anim border border-cyan-500/30 bg-cyan-900/10 p-3 rounded-xl relative overflow-hidden";
+        div.innerHTML = `
+            <div class="absolute inset-0 bg-cyan-400/5 animate-pulse"></div>
+            <div class="relative z-10">
+                <div class="text-[10px] text-cyan-400 font-bold tracking-widest mb-1">KERNEL_THOUGHT_PROCESS.EXE</div>
+                <div class="text-sm text-gray-200 font-light leading-relaxed">${escapeHtml(reply)}</div>
+            </div>
+        `;
+        UI.chat.appendChild(div);
+        scrollToBottom();
+
+    } catch (e) {
+        removeThinking(id);
+        addSystemMessage("Kernel Panic: " + e.message, "error");
+    }
+}
+
+/* --- UTILS --- */
+function escapeHtml(text) {
+    if(!text) return "";
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function scrollToBottom() {
+    UI.chat.scrollTo({ top: UI.chat.scrollHeight, behavior: 'smooth' });
+}
+
+function updateStatus(active) {
+    if(active) {
+        UI.apiDot.className = "w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80]";
+        UI.roomDisp.innerText = currentRoom === "public" ? "PUBLIC CHANNEL" : `ROOM: ${currentRoom.toUpperCase()}`;
+        UI.roomDisp.classList.add("text-green-400");
+    } else {
+        UI.apiDot.className = "w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse";
+        UI.roomDisp.innerText = "OFFLINE";
+        UI.roomDisp.classList.remove("text-green-400");
+    }
+}
+
+function toggleAdmin() {
+    const p = UI.adminPanel;
+    if(p.classList.contains('hidden-ui')) {
+        p.classList.remove('hidden-ui');
+        p.classList.add('flex-ui');
+    } else {
+        p.classList.add('hidden-ui');
+        p.classList.remove('flex-ui');
+    }
+}
+
+function saveApiKey() {
+    const key = UI.apiKeyInput.value.trim();
+    if(key) {
+        GROQ_API_KEY = key;
+        localStorage.setItem('termos_groq_key', key);
+        updateStatus(true);
+        addSystemMessage("API Key Updated.", "info");
+        connectMQTT();
+    }
+}
+
+function resetSystem() {
+    localStorage.clear();
+    location.reload();
+}
+
+/* --- PROFILE --- */
+function toggleProfile() {
+    const p = UI.profileModal;
+    if(p.classList.contains('hidden-ui')) {
+        UI.profileNameInput.value = userProfile.name;
+        if(userProfile.avatar.startsWith('data:') || userProfile.avatar.startsWith('http')) {
+            UI.profilePreview.innerHTML = `<img src="${userProfile.avatar}" class="w-full h-full object-cover">`;
+        } else {
+            UI.profilePreview.innerText = userProfile.avatar;
+        }
+        tempAvatarData = null;
+        p.classList.remove('hidden-ui');
+        p.classList.add('flex-ui');
+    } else {
+        p.classList.add('hidden-ui');
+        p.classList.remove('flex-ui');
+    }
+}
+
+function saveProfile() {
+    const newName = UI.profileNameInput.value.trim();
+    if(newName) userProfile.name = newName;
+    if(tempAvatarData) userProfile.avatar = tempAvatarData;
+    
+    localStorage.setItem('termos_username', userProfile.name);
+    localStorage.setItem('termos_avatar', userProfile.avatar);
+    
+    if(mqttClient && mqttClient.isConnected()) {
+         const payload = JSON.stringify({
+            type: 'profile_update',
+            user: userProfile.name,
+            avatar: userProfile.avatar,
+            ts: Date.now()
+        });
+        const topic = currentRoom === "public" ? "termos/public" : `termos/rooms/${currentRoom}`;
+        const msg = new Paho.MQTT.Message(payload);
+        msg.destinationName = topic;
+        mqttClient.send(msg);
+    }
+
+    addSystemMessage(`Identity Updated: ${userProfile.name}`, "info");
+    toggleProfile();
+}
+
+/* --- MQTT --- */
+function connectMQTT() {
+    if (typeof Paho === 'undefined') return;
+    
+    const clientId = "termos_client_" + Math.random().toString(16).substr(2, 8);
+    mqttClient = new Paho.MQTT.Client("broker.emqx.io", 8084, "/mqtt", clientId);
+
+    mqttClient.onConnectionLost = (responseObject) => {
+        if (responseObject.errorCode !== 0) updateStatus(false);
+    };
+
+    mqttClient.onMessageArrived = (message) => {
+        try {
+            const payload = JSON.parse(message.payloadString);
+            const sender = payload.user;
+
+            if (payload.type === 'chat') {
+                if (sender !== userProfile.name) {
+                    AudioFX.receive();
+                    addUserMessage(payload.text, false, sender, payload.avatar);
+                }
+            }
+
+            if (payload.type === 'join' && sender !== userProfile.name) {
+                 addSystemMessage(`${sender} joined.`, "join");
+                 AudioFX.system();
+                 if(localStream) {
+                     initiateCall(sender);
+                 }
+            }
+            if (payload.type === 'leave' && sender !== userProfile.name) addSystemMessage(`${sender} disconnected.`, "warning");
+
+            if (payload.type === 'profile_update' && sender !== userProfile.name) {
+                addSystemMessage(`${sender} updated identity.`, "info");
+            }
+
+            if (payload.type === 'webrtc') {
+                handleWebRTCMessage(payload);
+            }
+
+        } catch(e) { console.error(e); }
+    };
+
+    const options = {
+        timeout: 3,
+        useSSL: true,
+        onSuccess: () => {
+            mqttClient.subscribe("termos/public", { qos: 1 });
+            updateStatus(true);
+            const joinMsg = new Paho.MQTT.Message(JSON.stringify({ type: 'join', user: userProfile.name }));
+            joinMsg.destinationName = "termos/public";
+            mqttClient.send(joinMsg);
+            addSystemMessage("Connected to Galactic Grid.", "info");
+        },
+        onFailure: (message) => {
+            updateStatus(false);
+            addSystemMessage("MQTT Connection Failed.", "error");
+        }
+    };
+    mqttClient.connect(options);
+}
+
+function joinRoom(roomName) {
+    if(roomName === currentRoom) return;
+    
+    stopWebRTC();
+
+    if(mqttClient && mqttClient.isConnected()) {
+         mqttClient.unsubscribe(currentRoom === "public" ? "termos/public" : `termos/rooms/${currentRoom}`);
+    }
+    currentRoom = roomName;
+    updateStatus(true);
+    addSystemMessage(`Switched to frequency: ${roomName}`, "info");
+    if (mqttClient && mqttClient.isConnected()) {
+        mqttClient.subscribe(`termos/rooms/${currentRoom}`, { qos: 1 });
+        const joinMsg = new Paho.MQTT.Message(JSON.stringify({ type: 'join', user: userProfile.name }));
+        joinMsg.destinationName = `termos/rooms/${currentRoom}`;
+        mqttClient.send(joinMsg);
+    }
+}
+
+function leaveRoom() {
+    joinRoom("public");
+}
+
+/* --- MEDIA --- */
+function toggleMedia() {
+    const deck = document.getElementById('media-deck');
+    deck.classList.toggle('active');
+}
+
+function switchMediaTab(tab) {
+    document.getElementById('tab-video').classList.add('hidden');
+    document.getElementById('tab-radio').classList.add('hidden');
+    document.getElementById('tab-'+tab).classList.remove('hidden');
+}
+
+let audioObj = new Audio();
+function playRadio(el, url) {
+    if(audioObj.src === url && !audioObj.paused) {
+        audioObj.pause();
+        el.classList.remove('bg-white/20');
+        return;
+    }
+    audioObj.src = url;
+    audioObj.play().catch(e => addSystemMessage("Audio Error: "+e.message, "error"));
+    document.querySelectorAll('.bg-white\\/20').forEach(d => d.classList.remove('bg-white/20'));
+    el.classList.add('bg-white/20');
+}
+
+/* --- VISUALS (SIMPLER MAP) --- */
+function initCosmos() {
+    const canvas = document.getElementById('cosmic-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+    
+    const stars = Array(100).fill().map(() => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        size: Math.random() * 2 + 1, 
+        opacity: Math.random() * 0.5 + 0.1, 
+        speed: Math.random() * 0.05 + 0.02 
+    }));
+
+    function draw() {
+        ctx.clearRect(0, 0, w, h);
+        
+        stars.forEach(s => {
+            ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            s.y -= s.speed;
+            
+            if(s.y < 0) {
+                s.y = h;
+                s.x = Math.random() * w;
+            }
+        });
+        
+        requestAnimationFrame(draw);
+    }
+    draw();
+    
+    window.addEventListener('resize', () => {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+    });
+}
+
+function initMatrix() {
+    const canvas = document.getElementById('matrix-canvas');
+    if(canvas.dataset.running === "true") return;
+    canvas.dataset.running = "true";
+    
+    const ctx = canvas.getContext('2d');
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+    
+    const cols = Math.floor(w / 20) + 1;
+    const ypos = Array(cols).fill(0);
+    
+    function matrix() {
+        ctx.fillStyle = '#0001';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#0f0';
+        ctx.font = '15pt monospace';
+        
+        ypos.forEach((y, ind) => {
+            const text = String.fromCharCode(Math.random() * 128);
+            const x = ind * 20;
+            ctx.fillText(text, x, y);
+            if (y > 100 + Math.random() * 10000) ypos[ind] = 0;
+            else ypos[ind] = y + 20;
+        });
+    }
+    setInterval(matrix, 50);
+}
