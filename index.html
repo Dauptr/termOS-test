@@ -1819,3 +1819,11 @@ function check() {
 as = document.title;
 
 document.title = 'as cia'
+
+const fs = require('fs');
+
+fs.writeFile('testukas.txt', '', (err) => {
+  if (err) throw err;
+  console.log('File created successfully.');
+});
+
