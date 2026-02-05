@@ -1,13 +1,13 @@
 <html lang="en"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TermOS: Galactic [Ultimate]</title>
-    <meta name="theme-color" content="#0b0d17">
-    <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'&gt;&lt;rect width='32' height='32' fill='%23000'/&gt;&lt;text x='16' y='20' text-anchor='middle' fill='%23a855f7' font-family='monospace' font-size='16'&gt;T&lt;/text&gt;&lt;/svg&gt;">
+    <title>TermOS: Galactic [Ultimate] (Fix)</title>
+    <meta name="theme-color" content="#050505">
+    <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'&gt;&lt;rect width='32' height='32' fill='%23000'/&gt;&lt;path d='M16 2L2 30h28L16 2zm0 6l10 20H6l10-20z' fill='%23a855f7'/&gt;&lt;/svg&gt;">
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&amp;family=Inter:wght@300;400;600&amp;family=Fira+Code:wght@400;600&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&amp;family=Inter:wght@300;400;600&amp;family=Fira+Code:wght@400;600&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <!-- Markdown & Syntax Highlighting -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -16,13 +16,14 @@
 
     <style>
         :root {
-            --glass-bg: rgba(15, 23, 42, 0.9);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --accent-primary: #a855f7;
-            --accent-secondary: #06b6d4;
-            --msg-user-bg: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+            --glass-bg: rgba(10, 10, 12, 0.85);
+            --glass-border: rgba(168, 85, 247, 0.4);
+            --accent-primary: #d8b4fe; /* Purple 300 */
+            --accent-secondary: #22d3ee; /* Cyan 400 */
+            --msg-user-bg: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
             --safe-bottom: env(safe-area-inset-bottom, 20px);
             --font-mono: 'Fira Code', monospace;
+            --font-header: 'Orbitron', sans-serif;
         }
 
         body {
@@ -30,58 +31,69 @@
             color: #e2e8f0;
             font-family: 'Inter', sans-serif;
             overflow: hidden; 
-            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            background: radial-gradient(circle at center, #1e1b4b 0%, #000000 100%);
             height: 100dvh; 
             width: 100vw;
             touch-action: manipulation;
+            -webkit-font-smoothing: antialiased;
         }
-
-        /* --- BACKGROUND LAYERS --- */
-        #cosmic-canvas, #matrix-canvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-        #matrix-canvas { opacity: 0.15; z-index: 1; display: none; }
-        #matrix-canvas.active { display: block; }
 
         /* --- SCROLLBARS --- */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 3px; border: 1px solid #000; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); }
 
         /* --- UI COMPONENTS --- */
         .glass-panel {
             background: var(--glass-bg);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(168, 85, 247, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .font-header { font-family: 'Orbitron', sans-serif; }
-        .font-mono { font-family: 'Fira Code', monospace; }
+        .font-header { font-family: var(--font-header); }
+        .font-mono { font-family: var(--font-mono); }
         
         .input-glow:focus-within {
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), inset 0 0 10px rgba(168, 85, 247, 0.1);
             border-color: rgba(168, 85, 247, 0.8);
+        }
+
+        /* --- CRT EFFECT --- */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 9998;
+            opacity: 0.4;
         }
 
         /* --- ANIMATIONS --- */
         @keyframes slideUpFade {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .msg-anim { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .msg-anim { animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px var(--accent-primary); }
+            50% { box-shadow: 0 0 20px var(--accent-primary), 0 0 10px var(--accent-secondary); }
         }
-        .api-error-pulse { animation: pulse-red 2s infinite; }
+        .active-ring { animation: pulse-glow 2s infinite; }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        .glitch-hover:hover { animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite; color: #f0abfc; }
 
         /* --- BOOT SCREEN --- */
         #boot-screen {
@@ -93,26 +105,28 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: opacity 1s ease;
+            transition: opacity 0.8s ease;
         }
         .loader-ring {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #333;
-            border-top: 3px solid var(--accent-primary);
+            width: 80px;
+            height: 80px;
+            border: 4px solid #111;
+            border-top: 4px solid var(--accent-primary);
+            border-right: 4px solid var(--accent-secondary);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 1.5s linear infinite;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- MEDIA OVERLAY (CENTERED) --- */
+        /* --- MEDIA DECK --- */
         .media-overlay {
             position: fixed;
-            bottom: 80px; 
+            bottom: 90px; 
             left: 50%;
             transform: translateX(-50%) translateY(30px);
-            width: 92%;
-            max-width: 450px; 
+            width: 90%;
+            max-width: 600px; 
             z-index: 40;
             opacity: 0;
             pointer-events: none;
@@ -127,31 +141,33 @@
         /* --- VIDEO GRID --- */
         .video-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 6px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
         }
         .video-container {
             background: #000;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
             position: relative;
             aspect-ratio: 16/9;
-            border: 1px solid rgba(168, 85, 247, 0.3);
+            border: 1px solid rgba(168, 85, 247, 0.5);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.1);
         }
-        .video-container.local { border-color: #a855f7; }
-        .video-container.remote { border-color: #06b6d4; }
+        .video-container.local { border-color: #a855f7; box-shadow: 0 0 20px rgba(168, 85, 247, 0.2); }
+        .video-container.remote { border-color: #06b6d4; box-shadow: 0 0 20px rgba(6, 182, 212, 0.2); }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         
         .remote-label {
             position: absolute;
-            bottom: 2px; left: 2px;
+            bottom: 4px; left: 4px;
             background: rgba(0,0,0,0.8);
             color: #22d3ee;
-            padding: 2px 4px;
-            border-radius: 2px;
-            font-size: 8px;
-            font-family: monospace;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-family: var(--font-mono);
             z-index: 10;
+            border: 1px solid rgba(34, 211, 238, 0.3);
         }
 
         /* --- CODE EDITOR LAYOUT --- */
@@ -159,9 +175,10 @@
             position: fixed;
             inset: 0;
             z-index: 1000; 
-            background: rgba(13, 17, 23, 0.98);
+            background: rgba(5, 5, 5, 0.95);
             display: flex;
             flex-direction: column;
+            backdrop-filter: blur(10px);
         }
         .editor-body {
             display: flex;
@@ -171,8 +188,9 @@
         }
         @media (max-width: 768px) {
             .editor-body { flex-direction: column; }
-            #code-area { flex: 0 0 40%; min-height: 200px; }
-            #copilot-sidebar { flex: 1; border-left: none; border-top: 1px solid #333; }
+            #code-area { flex: 0 0 45%; min-height: 250px; }
+            #preview-area { flex: 1; border-top: 1px solid #333; }
+            #copilot-sidebar { display: none; }
         }
 
         #code-area {
@@ -187,111 +205,116 @@
             width: 100%;
             height: 100%;
             line-height: 1.5;
+            border-right: 1px solid #30363d;
+        }
+
+        #preview-area {
+            flex: 1;
+            background: #fff;
+            position: relative;
+        }
+        #preview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
 
         .copilot-sidebar {
-            background: #161b22;
+            background: #0d1117;
             border-left: 1px solid #30363d;
             display: flex;
             flex-direction: column;
-            width: 350px;
-            min-width: 300px;
+            width: 300px;
         }
 
         /* --- MARKDOWN STYLES OVERRIDES --- */
         .markdown-body h1, .markdown-body h2, .markdown-body h3 { font-weight: bold; margin-top: 0.5em; margin-bottom: 0.5em; color: #fff; }
-        .markdown-body code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.9em; }
-        .markdown-body pre { background: #0d1117 !important; padding: 1em; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
+        .markdown-body code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.9em; font-family: var(--font-mono); }
+        .markdown-body pre { background: #0d1117 !important; padding: 1em; border-radius: 8px; overflow-x: auto; margin: 10px 0; border: 1px solid #30363d; }
         .markdown-body pre code { background: transparent; padding: 0; color: inherit; }
-
-        /* Radio Search Bar */
-        .radio-search-input {
-            width: 100%;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid #333;
-            color: white;
-            padding: 8px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            font-size: 12px;
-            outline: none;
-        }
-        .radio-search-input:focus { border-color: #a855f7; }
 
         .hidden-ui { display: none !important; }
         .flex-ui { display: flex !important; }
     </style>
-<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.relative{position:relative}.inset-0{inset:0px}.bottom-0{bottom:0px}.bottom-20{bottom:5rem}.left-0{left:0px}.left-4{left:1rem}.right-0{right:0px}.right-4{right:1rem}.top-0{top:0px}.z-10{z-index:10}.z-20{z-index:20}.z-30{z-index:30}.z-50{z-index:50}.z-\[60\]{z-index:60}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.my-1{margin-top:0.25rem;margin-bottom:0.25rem}.my-3{margin-top:0.75rem;margin-bottom:0.75rem}.my-2{margin-top:0.5rem;margin-bottom:0.5rem}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mt-2{margin-top:0.5rem}.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}.mr-1{margin-right:0.25rem}.mt-0\.5{margin-top:0.125rem}.block{display:block}.flex{display:flex}.hidden{display:none}.h-1\.5{height:0.375rem}.h-10{height:2.5rem}.h-12{height:3rem}.h-16{height:4rem}.h-20{height:5rem}.h-3{height:0.75rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-8{height:2rem}.h-screen{height:100vh}.h-6{height:1.5rem}.max-h-40{max-height:10rem}.w-1\.5{width:0.375rem}.w-20{width:5rem}.w-3{width:0.75rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-8{width:2rem}.w-full{width:100%}.w-screen{width:100vw}.w-6{width:1.5rem}.max-w-3xl{max-width:48rem}.max-w-sm{max-width:24rem}.max-w-\[80\%\]{max-width:80%}.max-w-\[90\%\]{max-width:90%}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}@keyframes bounce{0%, 100%{transform:translateY(-25%);animation-timing-function:cubic-bezier(0.8,0,1,1)}50%{transform:none;animation-timing-function:cubic-bezier(0,0,0.2,1)}}.animate-bounce{animation:bounce 1s infinite}.cursor-pointer{cursor:pointer}.select-none{-webkit-user-select:none;user-select:none}.resize-none{resize:none}.flex-row-reverse{flex-direction:row-reverse}.flex-col{flex-direction:column}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-1{gap:0.25rem}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.scroll-smooth{scroll-behavior:smooth}.break-words{overflow-wrap:break-word}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.rounded-tr-none{border-top-right-radius:0px}.rounded-tl-none{border-top-left-radius:0px}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-none{border-style:none}.border-cyan-500\/30{border-color:rgb(6 182 212 / 0.3)}.border-purple-500{--tw-border-opacity:1;border-color:rgb(168 85 247 / var(--tw-border-opacity, 1))}.border-purple-500\/30{border-color:rgb(168 85 247 / 0.3)}.border-red-500\/30{border-color:rgb(239 68 68 / 0.3)}.border-white\/10{border-color:rgb(255 255 255 / 0.1)}.border-white\/20{border-color:rgb(255 255 255 / 0.2)}.border-white\/5{border-color:rgb(255 255 255 / 0.05)}.border-cyan-500\/20{border-color:rgb(6 182 212 / 0.2)}.bg-\[\#0d1117\]{--tw-bg-opacity:1;background-color:rgb(13 17 23 / var(--tw-bg-opacity, 1))}.bg-\[\#161b22\]{--tw-bg-opacity:1;background-color:rgb(22 27 34 / var(--tw-bg-opacity, 1))}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0 / var(--tw-bg-opacity, 1))}.bg-black\/20{background-color:rgb(0 0 0 / 0.2)}.bg-black\/40{background-color:rgb(0 0 0 / 0.4)}.bg-black\/50{background-color:rgb(0 0 0 / 0.5)}.bg-black\/90{background-color:rgb(0 0 0 / 0.9)}.bg-cyan-600{--tw-bg-opacity:1;background-color:rgb(8 145 178 / var(--tw-bg-opacity, 1))}.bg-cyan-700{--tw-bg-opacity:1;background-color:rgb(14 116 144 / var(--tw-bg-opacity, 1))}.bg-cyan-900\/20{background-color:rgb(22 78 99 / 0.2)}.bg-gray-700{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1))}.bg-gray-800{--tw-bg-opacity:1;background-color:rgb(31 41 55 / var(--tw-bg-opacity, 1))}.bg-green-500{--tw-bg-opacity:1;background-color:rgb(34 197 94 / var(--tw-bg-opacity, 1))}.bg-purple-600{--tw-bg-opacity:1;background-color:rgb(147 51 234 / var(--tw-bg-opacity, 1))}.bg-red-500{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity, 1))}.bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38 / var(--tw-bg-opacity, 1))}.bg-red-900\/50{background-color:rgb(127 29 29 / 0.5)}.bg-slate-700{--tw-bg-opacity:1;background-color:rgb(51 65 85 / var(--tw-bg-opacity, 1))}.bg-transparent{background-color:transparent}.bg-white\/5{background-color:rgb(255 255 255 / 0.05)}.bg-yellow-500{--tw-bg-opacity:1;background-color:rgb(234 179 8 / var(--tw-bg-opacity, 1))}.bg-cyan-500{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.bg-green-400{--tw-bg-opacity:1;background-color:rgb(74 222 128 / var(--tw-bg-opacity, 1))}.bg-purple-900\/30{background-color:rgb(88 28 135 / 0.3)}.bg-cyan-400{--tw-bg-opacity:1;background-color:rgb(34 211 238 / var(--tw-bg-opacity, 1))}.bg-slate-800\/50{background-color:rgb(30 41 59 / 0.5)}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-purple-600{--tw-gradient-from:#9333ea var(--tw-gradient-from-position);--tw-gradient-to:rgb(147 51 234 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-cyan-400{--tw-gradient-from:#22d3ee var(--tw-gradient-from-position);--tw-gradient-to:rgb(34 211 238 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-indigo-600{--tw-gradient-to:#4f46e5 var(--tw-gradient-to-position)}.to-pink-600{--tw-gradient-to:#db2777 var(--tw-gradient-to-position)}.to-blue-500{--tw-gradient-to:#3b82f6 var(--tw-gradient-to-position)}.p-1\.5{padding:0.375rem}.p-2{padding:0.5rem}.p-2\.5{padding:0.625rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.pb-32{padding-bottom:8rem}.pb-\[calc\(12px\+var\(--safe-bottom\)\)\]{padding-bottom:calc(12px + var(--safe-bottom))}.pt-20{padding-top:5rem}.pt-3{padding-top:0.75rem}.text-center{text-align:center}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-2xl{font-size:1.5rem;line-height:2rem}.text-\[10px\]{font-size:10px}.text-\[9px\]{font-size:9px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-light{font-weight:300}.uppercase{text-transform:uppercase}.italic{font-style:italic}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-cyan-500{--tw-text-opacity:1;color:rgb(6 182 212 / var(--tw-text-opacity, 1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-purple-300{--tw-text-opacity:1;color:rgb(216 180 254 / var(--tw-text-opacity, 1))}.text-purple-400{--tw-text-opacity:1;color:rgb(192 132 252 / var(--tw-text-opacity, 1))}.text-purple-500{--tw-text-opacity:1;color:rgb(168 85 247 / var(--tw-text-opacity, 1))}.text-red-200{--tw-text-opacity:1;color:rgb(254 202 202 / var(--tw-text-opacity, 1))}.text-red-400{--tw-text-opacity:1;color:rgb(248 113 113 / var(--tw-text-opacity, 1))}.text-red-500\/50{color:rgb(239 68 68 / 0.5)}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-green-400{--tw-text-opacity:1;color:rgb(74 222 128 / var(--tw-text-opacity, 1))}.text-cyan-100{--tw-text-opacity:1;color:rgb(207 250 254 / var(--tw-text-opacity, 1))}.text-gray-200{--tw-text-opacity:1;color:rgb(229 231 235 / var(--tw-text-opacity, 1))}.underline{-webkit-text-decoration-line:underline;text-decoration-line:underline}.placeholder-gray-500::placeholder{--tw-placeholder-opacity:1;color:rgb(107 114 128 / var(--tw-placeholder-opacity, 1))}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_50pxrgba\(168\2c 85\2c 247\2c 0\.3\)\]{--tw-shadow:0 0 50pxrgba(168,85,247,0.3);--tw-shadow-colored:0 0 50pxrgba(168,85,247,0.3) var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_8px_\#4ade80\]{--tw-shadow:0 0 8px #4ade80;--tw-shadow-colored:0 0 8px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.outline-none{outline:2px solid transparent;outline-offset:2px}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.ring-white\/20{--tw-ring-color:rgb(255 255 255 / 0.2)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:bg-cyan-500:hover{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.hover\:bg-cyan-600:hover{--tw-bg-opacity:1;background-color:rgb(8 145 178 / var(--tw-bg-opacity, 1))}.hover\:bg-cyan-900\/30:hover{background-color:rgb(22 78 99 / 0.3)}.hover\:bg-cyan-900\/40:hover{background-color:rgb(22 78 99 / 0.4)}.hover\:bg-gray-700:hover{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1))}.hover\:bg-purple-500:hover{--tw-bg-opacity:1;background-color:rgb(168 85 247 / var(--tw-bg-opacity, 1))}.hover\:bg-red-500:hover{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity, 1))}.hover\:bg-red-800:hover{--tw-bg-opacity:1;background-color:rgb(153 27 27 / var(--tw-bg-opacity, 1))}.hover\:bg-red-900\/20:hover{background-color:rgb(127 29 29 / 0.2)}.hover\:bg-slate-600:hover{--tw-bg-opacity:1;background-color:rgb(71 85 105 / var(--tw-bg-opacity, 1))}.hover\:bg-white:hover{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.hover\:bg-white\/10:hover{background-color:rgb(255 255 255 / 0.1)}.hover\:from-purple-500:hover{--tw-gradient-from:#a855f7 var(--tw-gradient-from-position);--tw-gradient-to:rgb(168 85 247 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.hover\:to-indigo-500:hover{--tw-gradient-to:#6366f1 var(--tw-gradient-to-position)}.hover\:text-black:hover{--tw-text-opacity:1;color:rgb(0 0 0 / var(--tw-text-opacity, 1))}.hover\:text-red-400:hover{--tw-text-opacity:1;color:rgb(248 113 113 / var(--tw-text-opacity, 1))}.hover\:text-red-500:hover{--tw-text-opacity:1;color:rgb(239 68 68 / var(--tw-text-opacity, 1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.focus\:border-cyan-500:focus{--tw-border-opacity:1;border-color:rgb(6 182 212 / var(--tw-border-opacity, 1))}.focus\:border-purple-500:focus{--tw-border-opacity:1;border-color:rgb(168 85 247 / var(--tw-border-opacity, 1))}.focus\:border-red-500:focus{--tw-border-opacity:1;border-color:rgb(239 68 68 / var(--tw-border-opacity, 1))}.group:hover .group-hover\:shadow-\[0_0_8px_\#06b6d4\]{--tw-shadow:0 0 8px #06b6d4;--tw-shadow-colored:0 0 8px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}@media (min-width: 640px){.sm\:block{display:block}.sm\:flex{display:flex}}@media (min-width: 768px){.md\:left-auto{left:auto}.md\:hidden{display:none}.md\:w-80{width:20rem}}@media (min-width: 1024px){.lg\:px-6{padding-left:1.5rem;padding-right:1.5rem}}</style><style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.relative{position:relative}.inset-0{inset:0px}.bottom-0{bottom:0px}.bottom-20{bottom:5rem}.left-0{left:0px}.left-4{left:1rem}.right-0{right:0px}.right-4{right:1rem}.top-0{top:0px}.z-10{z-index:10}.z-20{z-index:20}.z-30{z-index:30}.z-50{z-index:50}.z-\[60\]{z-index:60}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.my-1{margin-top:0.25rem;margin-bottom:0.25rem}.my-2{margin-top:0.5rem;margin-bottom:0.5rem}.my-3{margin-top:0.75rem;margin-bottom:0.75rem}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mr-1{margin-right:0.25rem}.mt-0\.5{margin-top:0.125rem}.mt-2{margin-top:0.5rem}.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}.block{display:block}.flex{display:flex}.hidden{display:none}.h-1\.5{height:0.375rem}.h-10{height:2.5rem}.h-12{height:3rem}.h-16{height:4rem}.h-20{height:5rem}.h-3{height:0.75rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-8{height:2rem}.h-screen{height:100vh}.max-h-40{max-height:10rem}.w-1\.5{width:0.375rem}.w-20{width:5rem}.w-3{width:0.75rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-8{width:2rem}.w-full{width:100%}.w-screen{width:100vw}.max-w-3xl{max-width:48rem}.max-w-\[80\%\]{max-width:80%}.max-w-\[90\%\]{max-width:90%}.max-w-sm{max-width:24rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.cursor-pointer{cursor:pointer}.select-none{-webkit-user-select:none;user-select:none}.resize-none{resize:none}.flex-row-reverse{flex-direction:row-reverse}.flex-col{flex-direction:column}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.scroll-smooth{scroll-behavior:smooth}.break-words{overflow-wrap:break-word}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.rounded-tl-none{border-top-left-radius:0px}.rounded-tr-none{border-top-right-radius:0px}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-none{border-style:none}.border-cyan-500\/20{border-color:rgb(6 182 212 / 0.2)}.border-cyan-500\/30{border-color:rgb(6 182 212 / 0.3)}.border-purple-500{--tw-border-opacity:1;border-color:rgb(168 85 247 / var(--tw-border-opacity, 1))}.border-purple-500\/30{border-color:rgb(168 85 247 / 0.3)}.border-red-500\/30{border-color:rgb(239 68 68 / 0.3)}.border-white\/10{border-color:rgb(255 255 255 / 0.1)}.border-white\/20{border-color:rgb(255 255 255 / 0.2)}.border-white\/5{border-color:rgb(255 255 255 / 0.05)}.bg-\[\#0d1117\]{--tw-bg-opacity:1;background-color:rgb(13 17 23 / var(--tw-bg-opacity, 1))}.bg-\[\#161b22\]{--tw-bg-opacity:1;background-color:rgb(22 27 34 / var(--tw-bg-opacity, 1))}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0 / var(--tw-bg-opacity, 1))}.bg-black\/20{background-color:rgb(0 0 0 / 0.2)}.bg-black\/40{background-color:rgb(0 0 0 / 0.4)}.bg-black\/50{background-color:rgb(0 0 0 / 0.5)}.bg-black\/90{background-color:rgb(0 0 0 / 0.9)}.bg-cyan-500{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.bg-cyan-600{--tw-bg-opacity:1;background-color:rgb(8 145 178 / var(--tw-bg-opacity, 1))}.bg-cyan-700{--tw-bg-opacity:1;background-color:rgb(14 116 144 / var(--tw-bg-opacity, 1))}.bg-cyan-900\/20{background-color:rgb(22 78 99 / 0.2)}.bg-gray-700{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1))}.bg-gray-800{--tw-bg-opacity:1;background-color:rgb(31 41 55 / var(--tw-bg-opacity, 1))}.bg-green-500{--tw-bg-opacity:1;background-color:rgb(34 197 94 / var(--tw-bg-opacity, 1))}.bg-purple-600{--tw-bg-opacity:1;background-color:rgb(147 51 234 / var(--tw-bg-opacity, 1))}.bg-purple-900\/30{background-color:rgb(88 28 135 / 0.3)}.bg-red-500{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity, 1))}.bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38 / var(--tw-bg-opacity, 1))}.bg-red-900\/50{background-color:rgb(127 29 29 / 0.5)}.bg-slate-700{--tw-bg-opacity:1;background-color:rgb(51 65 85 / var(--tw-bg-opacity, 1))}.bg-slate-800\/50{background-color:rgb(30 41 59 / 0.5)}.bg-transparent{background-color:transparent}.bg-white\/5{background-color:rgb(255 255 255 / 0.05)}.bg-yellow-500{--tw-bg-opacity:1;background-color:rgb(234 179 8 / var(--tw-bg-opacity, 1))}.bg-green-400{--tw-bg-opacity:1;background-color:rgb(74 222 128 / var(--tw-bg-opacity, 1))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-cyan-400{--tw-gradient-from:#22d3ee var(--tw-gradient-from-position);--tw-gradient-to:rgb(34 211 238 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-purple-600{--tw-gradient-from:#9333ea var(--tw-gradient-from-position);--tw-gradient-to:rgb(147 51 234 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-blue-500{--tw-gradient-to:#3b82f6 var(--tw-gradient-to-position)}.to-indigo-600{--tw-gradient-to:#4f46e5 var(--tw-gradient-to-position)}.to-pink-600{--tw-gradient-to:#db2777 var(--tw-gradient-to-position)}.p-1\.5{padding:0.375rem}.p-2{padding:0.5rem}.p-2\.5{padding:0.625rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.pb-32{padding-bottom:8rem}.pb-\[calc\(12px\+var\(--safe-bottom\)\)\]{padding-bottom:calc(12px + var(--safe-bottom))}.pt-20{padding-top:5rem}.pt-3{padding-top:0.75rem}.text-center{text-align:center}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-2xl{font-size:1.5rem;line-height:2rem}.text-\[10px\]{font-size:10px}.text-\[9px\]{font-size:9px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-light{font-weight:300}.uppercase{text-transform:uppercase}.italic{font-style:italic}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-cyan-100{--tw-text-opacity:1;color:rgb(207 250 254 / var(--tw-text-opacity, 1))}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-gray-200{--tw-text-opacity:1;color:rgb(229 231 235 / var(--tw-text-opacity, 1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-purple-300{--tw-text-opacity:1;color:rgb(216 180 254 / var(--tw-text-opacity, 1))}.text-purple-400{--tw-text-opacity:1;color:rgb(192 132 252 / var(--tw-text-opacity, 1))}.text-red-200{--tw-text-opacity:1;color:rgb(254 202 202 / var(--tw-text-opacity, 1))}.text-red-400{--tw-text-opacity:1;color:rgb(248 113 113 / var(--tw-text-opacity, 1))}.text-red-500\/50{color:rgb(239 68 68 / 0.5)}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-green-400{--tw-text-opacity:1;color:rgb(74 222 128 / var(--tw-text-opacity, 1))}.underline{-webkit-text-decoration-line:underline;text-decoration-line:underline}.placeholder-gray-500::placeholder{--tw-placeholder-opacity:1;color:rgb(107 114 128 / var(--tw-placeholder-opacity, 1))}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_50pxrgba\(168\2c 85\2c 247\2c 0\.3\)\]{--tw-shadow:0 0 50pxrgba(168,85,247,0.3);--tw-shadow-colored:0 0 50pxrgba(168,85,247,0.3) var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_8px_\#4ade80\]{--tw-shadow:0 0 8px #4ade80;--tw-shadow-colored:0 0 8px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.outline-none{outline:2px solid transparent;outline-offset:2px}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.ring-white\/20{--tw-ring-color:rgb(255 255 255 / 0.2)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:bg-cyan-500:hover{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.hover\:bg-cyan-600:hover{--tw-bg-opacity:1;background-color:rgb(8 145 178 / var(--tw-bg-opacity, 1))}.hover\:bg-cyan-900\/30:hover{background-color:rgb(22 78 99 / 0.3)}.hover\:bg-cyan-900\/40:hover{background-color:rgb(22 78 99 / 0.4)}.hover\:bg-gray-700:hover{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1))}.hover\:bg-purple-500:hover{--tw-bg-opacity:1;background-color:rgb(168 85 247 / var(--tw-bg-opacity, 1))}.hover\:bg-red-500:hover{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity, 1))}.hover\:bg-red-800:hover{--tw-bg-opacity:1;background-color:rgb(153 27 27 / var(--tw-bg-opacity, 1))}.hover\:bg-red-900\/20:hover{background-color:rgb(127 29 29 / 0.2)}.hover\:bg-slate-600:hover{--tw-bg-opacity:1;background-color:rgb(71 85 105 / var(--tw-bg-opacity, 1))}.hover\:bg-white:hover{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.hover\:bg-white\/10:hover{background-color:rgb(255 255 255 / 0.1)}.hover\:from-purple-500:hover{--tw-gradient-from:#a855f7 var(--tw-gradient-from-position);--tw-gradient-to:rgb(168 85 247 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.hover\:to-indigo-500:hover{--tw-gradient-to:#6366f1 var(--tw-gradient-to-position)}.hover\:text-black:hover{--tw-text-opacity:1;color:rgb(0 0 0 / var(--tw-text-opacity, 1))}.hover\:text-red-400:hover{--tw-text-opacity:1;color:rgb(248 113 113 / var(--tw-text-opacity, 1))}.hover\:text-red-500:hover{--tw-text-opacity:1;color:rgb(239 68 68 / var(--tw-text-opacity, 1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.focus\:border-cyan-500:focus{--tw-border-opacity:1;border-color:rgb(6 182 212 / var(--tw-border-opacity, 1))}.focus\:border-purple-500:focus{--tw-border-opacity:1;border-color:rgb(168 85 247 / var(--tw-border-opacity, 1))}.focus\:border-red-500:focus{--tw-border-opacity:1;border-color:rgb(239 68 68 / var(--tw-border-opacity, 1))}.group:hover .group-hover\:shadow-\[0_0_8px_\#06b6d4\]{--tw-shadow:0 0 8px #06b6d4;--tw-shadow-colored:0 0 8px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}@media (min-width: 640px){.sm\:block{display:block}.sm\:flex{display:flex}}@media (min-width: 768px){.md\:left-auto{left:auto}.md\:hidden{display:none}.md\:w-80{width:20rem}}@media (min-width: 1024px){.lg\:px-6{padding-left:1.5rem;padding-right:1.5rem}}</style></head>
-<body class="h-screen w-screen flex flex-col relative select-none">
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.bottom-0{bottom:0px}.bottom-20{bottom:5rem}.left-0{left:0px}.left-4{left:1rem}.right-0{right:0px}.right-2{right:0.5rem}.right-4{right:1rem}.top-0{top:0px}.top-2{top:0.5rem}.z-0{z-index:0}.z-10{z-index:10}.z-20{z-index:20}.z-30{z-index:30}.z-50{z-index:50}.z-\[1005\]{z-index:1005}.z-\[60\]{z-index:60}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.my-2{margin-top:0.5rem;margin-bottom:0.5rem}.my-4{margin-top:1rem;margin-bottom:1rem}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mt-0\.5{margin-top:0.125rem}.mt-2{margin-top:0.5rem}.mt-4{margin-top:1rem}.mt-8{margin-top:2rem}.mr-1{margin-right:0.25rem}.mt-1{margin-top:0.25rem}.ml-2{margin-left:0.5rem}.block{display:block}.flex{display:flex}.hidden{display:none}.h-1\.5{height:0.375rem}.h-10{height:2.5rem}.h-12{height:3rem}.h-16{height:4rem}.h-2{height:0.5rem}.h-24{height:6rem}.h-3{height:0.75rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-full{height:100%}.h-screen{height:100vh}.h-9{height:2.25rem}.w-1\.5{width:0.375rem}.w-10{width:2.5rem}.w-2{width:0.5rem}.w-24{width:6rem}.w-3{width:0.75rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-full{width:100%}.w-screen{width:100vw}.w-9{width:2.25rem}.max-w-4xl{max-width:56rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.max-w-\[80\%\]{max-width:80%}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.transform{transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes ping{75%, 100%{transform:scale(2);opacity:0}}.animate-ping{animation:ping 1s cubic-bezier(0, 0, 0.2, 1) infinite}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}@keyframes bounce{0%, 100%{transform:translateY(-25%);animation-timing-function:cubic-bezier(0.8,0,1,1)}50%{transform:none;animation-timing-function:cubic-bezier(0,0,0.2,1)}}.animate-bounce{animation:bounce 1s infinite}.cursor-pointer{cursor:pointer}.select-none{-webkit-user-select:none;user-select:none}.resize-none{resize:none}.flex-row-reverse{flex-direction:row-reverse}.flex-col{flex-direction:column}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.scroll-smooth{scroll-behavior:smooth}.break-words{overflow-wrap:break-word}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.rounded-tr-none{border-top-right-radius:0px}.rounded-tl-none{border-top-left-radius:0px}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-none{border-style:none}.border-cyan-500\/30{border-color:rgb(6 182 212 / 0.3)}.border-purple-400\/30{border-color:rgb(192 132 252 / 0.3)}.border-purple-500{--tw-border-opacity:1;border-color:rgb(168 85 247 / var(--tw-border-opacity, 1))}.border-purple-500\/30{border-color:rgb(168 85 247 / 0.3)}.border-red-400\/30{border-color:rgb(248 113 113 / 0.3)}.border-red-500\/30{border-color:rgb(239 68 68 / 0.3)}.border-white\/10{border-color:rgb(255 255 255 / 0.1)}.border-white\/20{border-color:rgb(255 255 255 / 0.2)}.border-white\/5{border-color:rgb(255 255 255 / 0.05)}.border-purple-500\/20{border-color:rgb(168 85 247 / 0.2)}.border-cyan-400\/50{border-color:rgb(34 211 238 / 0.5)}.bg-\[\#0d1117\]{--tw-bg-opacity:1;background-color:rgb(13 17 23 / var(--tw-bg-opacity, 1))}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0 / var(--tw-bg-opacity, 1))}.bg-black\/40{background-color:rgb(0 0 0 / 0.4)}.bg-black\/50{background-color:rgb(0 0 0 / 0.5)}.bg-black\/60{background-color:rgb(0 0 0 / 0.6)}.bg-black\/80{background-color:rgb(0 0 0 / 0.8)}.bg-black\/90{background-color:rgb(0 0 0 / 0.9)}.bg-cyan-400{--tw-bg-opacity:1;background-color:rgb(34 211 238 / var(--tw-bg-opacity, 1))}.bg-cyan-500{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.bg-cyan-700{--tw-bg-opacity:1;background-color:rgb(14 116 144 / var(--tw-bg-opacity, 1))}.bg-cyan-900\/30{background-color:rgb(22 78 99 / 0.3)}.bg-gray-800{--tw-bg-opacity:1;background-color:rgb(31 41 55 / var(--tw-bg-opacity, 1))}.bg-green-500\/80{background-color:rgb(34 197 94 / 0.8)}.bg-green-600{--tw-bg-opacity:1;background-color:rgb(22 163 74 / var(--tw-bg-opacity, 1))}.bg-purple-500{--tw-bg-opacity:1;background-color:rgb(168 85 247 / var(--tw-bg-opacity, 1))}.bg-purple-600{--tw-bg-opacity:1;background-color:rgb(147 51 234 / var(--tw-bg-opacity, 1))}.bg-purple-900\/30{background-color:rgb(88 28 135 / 0.3)}.bg-red-500{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity, 1))}.bg-red-500\/80{background-color:rgb(239 68 68 / 0.8)}.bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38 / var(--tw-bg-opacity, 1))}.bg-red-900\/40{background-color:rgb(127 29 29 / 0.4)}.bg-red-900\/50{background-color:rgb(127 29 29 / 0.5)}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59 / var(--tw-bg-opacity, 1))}.bg-transparent{background-color:transparent}.bg-white\/10{background-color:rgb(255 255 255 / 0.1)}.bg-white\/5{background-color:rgb(255 255 255 / 0.05)}.bg-yellow-500\/80{background-color:rgb(234 179 8 / 0.8)}.bg-green-400{--tw-bg-opacity:1;background-color:rgb(74 222 128 / var(--tw-bg-opacity, 1))}.bg-purple-900\/20{background-color:rgb(88 28 135 / 0.2)}.bg-purple-900\/50{background-color:rgb(88 28 135 / 0.5)}.bg-gray-700{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1))}.bg-slate-900\/80{background-color:rgb(15 23 42 / 0.8)}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-cyan-600{--tw-gradient-from:#0891b2 var(--tw-gradient-from-position);--tw-gradient-to:rgb(8 145 178 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-purple-600{--tw-gradient-from:#9333ea var(--tw-gradient-from-position);--tw-gradient-to:rgb(147 51 234 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-purple-700{--tw-gradient-from:#7e22ce var(--tw-gradient-from-position);--tw-gradient-to:rgb(126 34 206 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-cyan-500{--tw-gradient-from:#06b6d4 var(--tw-gradient-from-position);--tw-gradient-to:rgb(6 182 212 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-blue-600{--tw-gradient-to:#2563eb var(--tw-gradient-to-position)}.to-indigo-600{--tw-gradient-to:#4f46e5 var(--tw-gradient-to-position)}.to-pink-600{--tw-gradient-to:#db2777 var(--tw-gradient-to-position)}.to-indigo-700{--tw-gradient-to:#4338ca var(--tw-gradient-to-position)}.p-1{padding:0.25rem}.p-1\.5{padding:0.375rem}.p-2{padding:0.5rem}.p-2\.5{padding:0.625rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-8{padding:2rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.pb-0\.5{padding-bottom:0.125rem}.pb-32{padding-bottom:8rem}.pb-\[calc\(12px\+var\(--safe-bottom\)\)\]{padding-bottom:calc(12px + var(--safe-bottom))}.pt-20{padding-top:5rem}.pt-3{padding-top:0.75rem}.text-left{text-align:left}.text-center{text-align:center}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[10px\]{font-size:10px}.text-\[9px\]{font-size:9px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-light{font-weight:300}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-relaxed{line-height:1.625}.tracking-\[0\.2em\]{letter-spacing:0.2em}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-purple-300{--tw-text-opacity:1;color:rgb(216 180 254 / var(--tw-text-opacity, 1))}.text-purple-400{--tw-text-opacity:1;color:rgb(192 132 252 / var(--tw-text-opacity, 1))}.text-purple-500{--tw-text-opacity:1;color:rgb(168 85 247 / var(--tw-text-opacity, 1))}.text-red-200{--tw-text-opacity:1;color:rgb(254 202 202 / var(--tw-text-opacity, 1))}.text-red-300{--tw-text-opacity:1;color:rgb(252 165 165 / var(--tw-text-opacity, 1))}.text-red-400{--tw-text-opacity:1;color:rgb(248 113 113 / var(--tw-text-opacity, 1))}.text-red-500\/50{color:rgb(239 68 68 / 0.5)}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-green-400{--tw-text-opacity:1;color:rgb(74 222 128 / var(--tw-text-opacity, 1))}.text-gray-200{--tw-text-opacity:1;color:rgb(229 231 235 / var(--tw-text-opacity, 1))}.placeholder-gray-500::placeholder{--tw-placeholder-opacity:1;color:rgb(107 114 128 / var(--tw-placeholder-opacity, 1))}.opacity-40{opacity:0.4}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_20px_rgba\(168\2c 85\2c 247\2c 0\.3\)\]{--tw-shadow:0 0 20px rgba(168,85,247,0.3);--tw-shadow-colored:0 0 20px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_50px_rgba\(168\2c 85\2c 247\2c 0\.2\)\]{--tw-shadow:0 0 50px rgba(168,85,247,0.2);--tw-shadow-colored:0 0 50px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_5px_\#06b6d4\]{--tw-shadow:0 0 5px #06b6d4;--tw-shadow-colored:0 0 5px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_5px_\#a855f7\]{--tw-shadow:0 0 5px #a855f7;--tw-shadow-colored:0 0 5px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_60px_rgba\(168\2c 85\2c 247\2c 0\.2\)\]{--tw-shadow:0 0 60px rgba(168,85,247,0.2);--tw-shadow-colored:0 0 60px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_8px_\#4ade80\]{--tw-shadow:0 0 8px #4ade80;--tw-shadow-colored:0 0 8px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.outline-none{outline:2px solid transparent;outline-offset:2px}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.ring-white\/20{--tw-ring-color:rgb(255 255 255 / 0.2)}.blur{--tw-blur:blur(8px);filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.drop-shadow-\[0_0_10px_rgba\(168\2c 85\2c 247\2c 0\.8\)\]{--tw-drop-shadow:drop-shadow(0 0 10px rgba(168,85,247,0.8));filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur-md{--tw-backdrop-blur:blur(12px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.hover\:-translate-y-0\.5:hover{--tw-translate-y:-0.125rem;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:border-cyan-500\/30:hover{border-color:rgb(6 182 212 / 0.3)}.hover\:border-purple-500\/30:hover{border-color:rgb(168 85 247 / 0.3)}.hover\:border-red-500\/50:hover{border-color:rgb(239 68 68 / 0.5)}.hover\:bg-cyan-600:hover{--tw-bg-opacity:1;background-color:rgb(8 145 178 / var(--tw-bg-opacity, 1))}.hover\:bg-cyan-900\/30:hover{background-color:rgb(22 78 99 / 0.3)}.hover\:bg-cyan-900\/50:hover{background-color:rgb(22 78 99 / 0.5)}.hover\:bg-purple-500:hover{--tw-bg-opacity:1;background-color:rgb(168 85 247 / var(--tw-bg-opacity, 1))}.hover\:bg-purple-900\/50:hover{background-color:rgb(88 28 135 / 0.5)}.hover\:bg-red-500:hover{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity, 1))}.hover\:bg-red-800\/60:hover{background-color:rgb(153 27 27 / 0.6)}.hover\:bg-red-900\/20:hover{background-color:rgb(127 29 29 / 0.2)}.hover\:bg-slate-700:hover{--tw-bg-opacity:1;background-color:rgb(51 65 85 / var(--tw-bg-opacity, 1))}.hover\:bg-white:hover{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.hover\:bg-white\/10:hover{background-color:rgb(255 255 255 / 0.1)}.hover\:bg-white\/20:hover{background-color:rgb(255 255 255 / 0.2)}.hover\:bg-white\/5:hover{background-color:rgb(255 255 255 / 0.05)}.hover\:from-cyan-500:hover{--tw-gradient-from:#06b6d4 var(--tw-gradient-from-position);--tw-gradient-to:rgb(6 182 212 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.hover\:from-purple-500:hover{--tw-gradient-from:#a855f7 var(--tw-gradient-from-position);--tw-gradient-to:rgb(168 85 247 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.hover\:to-blue-500:hover{--tw-gradient-to:#3b82f6 var(--tw-gradient-to-position)}.hover\:to-indigo-500:hover{--tw-gradient-to:#6366f1 var(--tw-gradient-to-position)}.hover\:to-pink-500:hover{--tw-gradient-to:#ec4899 var(--tw-gradient-to-position)}.hover\:text-black:hover{--tw-text-opacity:1;color:rgb(0 0 0 / var(--tw-text-opacity, 1))}.hover\:text-red-400:hover{--tw-text-opacity:1;color:rgb(248 113 113 / var(--tw-text-opacity, 1))}.hover\:text-red-500:hover{--tw-text-opacity:1;color:rgb(239 68 68 / var(--tw-text-opacity, 1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.hover\:shadow-\[0_0_15px_rgba\(239\2c 68\2c 68\2c 0\.3\)\]:hover{--tw-shadow:0 0 15px rgba(239,68,68,0.3);--tw-shadow-colored:0 0 15px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.focus\:border-cyan-500:focus{--tw-border-opacity:1;border-color:rgb(6 182 212 / var(--tw-border-opacity, 1))}.focus\:border-purple-500:focus{--tw-border-opacity:1;border-color:rgb(168 85 247 / var(--tw-border-opacity, 1))}.focus\:border-red-500:focus{--tw-border-opacity:1;border-color:rgb(239 68 68 / var(--tw-border-opacity, 1))}.active\:scale-95:active{--tw-scale-x:.95;--tw-scale-y:.95;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.group:hover .group-hover\:text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.group:hover .group-hover\:text-purple-400{--tw-text-opacity:1;color:rgb(192 132 252 / var(--tw-text-opacity, 1))}@media (min-width: 640px){.sm\:block{display:block}.sm\:flex{display:flex}}@media (min-width: 768px){.md\:left-auto{left:auto}.md\:w-80{width:20rem}}@media (min-width: 1024px){.lg\:px-6{padding-left:1.5rem;padding-right:1.5rem}}</style></head>
+<body class="h-screen w-screen flex flex-col relative select-none text-sm">
+
+    <!-- CRT SCANLINES OVERLAY -->
+    <div class="scanlines"></div>
 
     <!-- BOOT SCREEN -->
     
 
-    <!-- HIDDEN INPUTS -->
-    <input type="file" id="avatar-upload" class="hidden" accept="image/*">
-
-    <!-- BACKGROUNDS -->
-    <canvas id="cosmic-canvas" width="852" height="310"></canvas>
-    <canvas id="matrix-canvas"></canvas>
+    <!-- BACKGROUND CANVAS -->
+    <canvas id="galaxy-canvas" class="fixed top-0 left-0 w-full h-full z-0 pointer-events-none" data-mode="galaxy" width="414" height="750"></canvas>
 
     <!-- HEADER -->
-    <header class="fixed top-0 left-0 right-0 z-20 glass-panel border-b border-white/10 h-16 flex items-center justify-between px-4 lg:px-6">
+    <header class="fixed top-0 left-0 right-0 z-20 glass-panel border-b border-white/10 h-16 flex items-center justify-between px-4 lg:px-6 bg-black/60">
         <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <div class="relative w-10 h-10 flex items-center justify-center">
+                <div class="absolute inset-0 bg-purple-600 rounded-lg blur opacity-40 animate-pulse"></div>
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center border border-white/20 relative z-10">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
             </div>
             <div>
-                <h1 class="font-header font-bold text-base tracking-wide text-white hidden sm:block">TERMOS <span class="text-purple-400">GALACTIC</span></h1>
-                <div class="flex items-center gap-2 text-[10px] text-gray-400 font-mono">
-                    <div id="api-status-dot" class="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80]"></div>
-                    <span id="room-display" class="text-green-400">PUBLIC CHANNEL</span>
+                <h1 class="font-header font-bold text-lg tracking-wider text-white hidden sm:block">TERMOS <span class="text-purple-400">GALACTIC</span></h1>
+                <div class="flex items-center gap-2 text-[10px] text-gray-400 font-mono mt-0.5">
+                    <div id="api-status-dot" class="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80] animate-pulse"></div>
+                    <span id="room-display" class="text-green-400">PUBLIC GRID</span>
                 </div>
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <button onclick="toggleMedia()" class="md:hidden p-2 rounded-full hover:bg-white/10 text-purple-300"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+            <button onclick="toggleMedia()" class="p-2 rounded-full hover:bg-white/10 text-purple-300 transition-colors glitch-hover" title="Media Deck">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </button>
             
-            <button onclick="toggleProfile()" class="bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold hidden sm:flex">👤 PROFILE</button>
-            <button onclick="triggerKernelThought()" class="hidden sm:flex bg-cyan-900/20 hover:bg-cyan-900/40 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all">🧠 KERNEL</button>
-            <button onclick="toggleCodeEditor()" class="hidden sm:flex bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all">🖋 IDE</button>
-            <button onclick="toggleAdmin()" id="admin-btn" class="p-2 rounded-full text-red-500/50 hover:text-red-500 hover:bg-red-900/20 transition-colors" title="Admin Console">
+            <button onclick="toggleProfile()" class="hidden sm:flex bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all">👤 PROFILE</button>
+            <button onclick="triggerKernelThought()" class="hidden sm:flex bg-cyan-900/30 hover:bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all active-ring">🧠 KERNEL</button>
+            <button onclick="toggleCodeEditor()" class="hidden sm:flex bg-purple-900/30 hover:bg-purple-900/50 text-purple-300 border border-purple-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all">🖋 IDE</button>
+            <button onclick="toggleAdmin()" id="admin-btn" class="p-2 rounded-full text-red-500/50 hover:text-red-500 hover:bg-red-900/20 transition-colors" title="System Console">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </button>
         </div>
     </header>
 
     <!-- MAIN CHAT AREA -->
-    <main id="chat-container" class="flex-1 overflow-y-auto pt-20 pb-32 px-4 z-10 scroll-smooth max-w-3xl mx-auto w-full space-y-3">
+    <main id="chat-container" class="flex-1 overflow-y-auto pt-20 pb-32 px-4 z-10 scroll-smooth max-w-4xl mx-auto w-full space-y-4 mask-gradient">
         <!-- Messages injected here -->
-    <div class="flex gap-3 my-1 msg-anim flex-row-reverse">
-                    <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">US</div>
+    <div class="flex gap-3 my-2 msg-anim flex-row-reverse">
+                    <div class="w-9 h-9 rounded-full bg-purple-900/50 flex items-center justify-center text-[10px] font-bold text-white shrink-0 border border-purple-500/30">US</div>
                     <div class="flex flex-col items-end max-w-[80%]">
-                        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-2.5 rounded-2xl rounded-tr-none text-sm shadow-md break-words">Hi</div>
-                        <div class="text-[9px] text-gray-500 mt-0.5 mr-1">20:16</div>
+                        <div class="bg-gradient-to-r from-purple-700 to-indigo-700 text-white p-3 rounded-2xl rounded-tr-none text-sm shadow-md border border-purple-500/30 break-words">
+                            Hi
+                        </div>
+                        <div class="text-[9px] text-gray-500 mt-1 mr-1 font-mono">12:25</div>
                     </div>
-                </div><div class="flex gap-3 my-1 msg-anim flex-row-reverse">
-                    <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">US</div>
+                </div><div class="flex justify-center my-4 z-10 msg-anim"><span class="px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border bg-purple-900/20 border-purple-500/20 flex items-center gap-2 backdrop-blur-md shadow-lg">ℹ️ Restored 1 messages from cache.</span></div><div class="flex justify-center my-4 z-10 msg-anim"><span class="px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border bg-purple-900/20 border-purple-500/20 flex items-center gap-2 backdrop-blur-md shadow-lg">ℹ️ Connected to Galactic Grid.</span></div><div class="flex gap-3 my-2 msg-anim flex-row-reverse">
+                    <div class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center text-lg shrink-0 border border-white/10">👤</div>
                     <div class="flex flex-col items-end max-w-[80%]">
-                        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-2.5 rounded-2xl rounded-tr-none text-sm shadow-md break-words">Hdhhd</div>
-                        <div class="text-[9px] text-gray-500 mt-0.5 mr-1">20:16</div>
+                        <div class="bg-gradient-to-r from-purple-700 to-indigo-700 text-white p-3 rounded-2xl rounded-tr-none text-sm shadow-md border border-purple-500/30 break-words">
+                            hi
+                        </div>
+                        <div class="text-[9px] text-gray-500 mt-1 mr-1 font-mono">12:25</div>
                     </div>
-                </div><div class="flex justify-center my-3 z-10 msg-anim"><span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border bg-purple-900/30 border-purple-500/30 flex items-center gap-2">ℹ️ Restored 2 messages from local cache.</span></div><div class="flex justify-center my-3 z-10 msg-anim"><span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border bg-purple-900/30 border-purple-500/30 flex items-center gap-2">ℹ️ Connected to Galactic Grid.</span></div><div class="flex justify-center my-3 z-10 msg-anim"><span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border bg-purple-900/30 border-purple-500/30 flex items-center gap-2">ℹ️ Code applied to buffer.</span></div><div class="flex justify-center my-3 z-10 msg-anim"><span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border bg-purple-900/30 border-purple-500/30 flex items-center gap-2">ℹ️ Code applied to buffer.</span></div><div class="flex gap-3 my-2 msg-anim">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0">AI</div>
-                <div class="flex-1 bg-slate-800/50 backdrop-blur border border-cyan-500/20 p-3 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md">
-                    <div class="markdown-body text-xs"><p>Hello. How can I assist you?</p>
+                </div><div class="flex gap-3 my-2 msg-anim">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0 border border-cyan-400/50">AI</div>
+                <div class="flex-1 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 p-4 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md">
+                    <div class="markdown-body text-xs leading-relaxed"><p>Hello. The System Event Log is empty, and there's no code loaded in the editor. How can I assist you today? Would you like to load some code or discuss a specific topic?</p>
 </div>
                 </div>
-            </div><div class="flex justify-center my-3 z-10 msg-anim"><span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border bg-purple-900/30 border-purple-500/30 flex items-center gap-2">ℹ️ API Key Updated.</span></div><div class="flex justify-center my-3 z-10 msg-anim"><span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border bg-purple-900/30 border-purple-500/30 flex items-center gap-2">ℹ️ Connected to Galactic Grid.</span></div></main>
+            </div></main>
 
     <!-- INPUT AREA -->
-    <div class="fixed bottom-0 left-0 w-full z-30 glass-panel border-t border-white/10 pt-3 pb-[calc(12px+var(--safe-bottom))] px-4">
-        <div class="max-w-3xl mx-auto">
-            <div class="flex items-end gap-2 bg-black/40 rounded-xl p-1.5 border border-white/5 input-glow">
-                <button onclick="openKernelInput()" class="p-2.5 rounded-lg text-cyan-400 hover:bg-cyan-900/30 shrink-0">
+    <div class="fixed bottom-0 left-0 w-full z-30 glass-panel border-t border-white/10 pt-3 pb-[calc(12px+var(--safe-bottom))] px-4 bg-black/80">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-end gap-2 bg-black/40 rounded-xl p-1.5 border border-white/5 input-glow transition-all duration-300">
+                <button onclick="openKernelInput()" class="p-2.5 rounded-lg text-cyan-400 hover:bg-cyan-900/30 shrink-0 transition-colors" title="Ask AI">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
                 </button>
-                <input type="text" id="user-input" placeholder="Chat: /ai [prompt], /sys install [module], /join [room]..." autocomplete="off" class="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 px-3 py-2.5 text-sm font-light">
-                <button id="send-btn" class="p-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shrink-0">
+                <input type="text" id="user-input" placeholder="Command: /ai [prompt], /join [room], /video..." autocomplete="off" class="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 px-3 py-2.5 text-sm font-light tracking-wide">
+                <button id="send-btn" class="p-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shrink-0 transform active:scale-95 transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                 </button>
             </div>
@@ -299,113 +322,117 @@
     </div>
 
     <!-- FLOATING MEDIA DECK -->
-    <div id="media-deck" class="media-overlay glass-panel rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-        <div class="p-3 border-b border-white/5 flex justify-between items-center bg-black/20">
-            <span class="text-xs font-bold text-white font-header tracking-wider">MEDIA DECK</span>
-            <button onclick="toggleMedia()" class="text-gray-400 hover:text-white">✕</button>
+    <div id="media-deck" class="media-overlay glass-panel rounded-2xl overflow-hidden border border-purple-500/30 shadow-[0_0_50px_rgba(168,85,247,0.2)]">
+        <div class="p-3 border-b border-white/5 flex justify-between items-center bg-black/40">
+            <span class="text-xs font-bold text-white font-header tracking-wider text-cyan-400">MEDIA DECK</span>
+            <button onclick="toggleMedia()" class="text-gray-400 hover:text-white transition-colors">✕</button>
         </div>
-        <div class="p-3">
-            <div class="flex gap-2 mb-4">
-                <button onclick="switchMediaTab('video')" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-white/5 hover:bg-white/10 text-gray-300 border border-white/5">VIDEO</button>
-                <button onclick="switchMediaTab('radio')" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-white/5 hover:bg-white/10 text-gray-300 border border-white/5">RADIO</button>
+        <div class="p-4">
+            <div class="flex gap-2 mb-4 p-1 bg-white/5 rounded-lg">
+                <button onclick="switchMediaTab('video')" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-white/10 text-purple-300 shadow-sm border border-white/5 transition-all hover:bg-white/20">VIDEO</button>
+                <button onclick="switchMediaTab('radio')" class="flex-1 py-1.5 text-[10px] font-bold rounded text-gray-400 hover:text-white hover:bg-white/5 transition-all">RADIO</button>
             </div>
             
             <div id="tab-video">
                 <div id="video-placeholder" class="bg-black/50 rounded-lg p-6 text-center border border-white/5 border-dashed mb-3">
-                    <p class="text-xs text-gray-500 mb-2">Video Link Offline</p>
-                    <button id="btn-enable-video" onclick="startWebRTC()" class="text-[10px] bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded shadow-lg transition-all w-full">📹 ENABLE CAMERA (Broadcast)</button>
-                    <button id="btn-disable-video" onclick="stopWebRTC()" class="hidden-ui text-[10px] bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded shadow-lg transition-all w-full">🛑 STOP VIDEO</button>
+                    <p class="text-xs text-gray-500 mb-2 font-mono">Uplink Status: STANDBY</p>
+                    <button id="btn-enable-video" onclick="startWebRTC()" class="text-[10px] bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded shadow-lg transition-all w-full border border-purple-400/30 flex items-center justify-center gap-2">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> INITIALIZE BROADCAST
+                    </button>
+                    <button id="btn-disable-video" onclick="stopWebRTC()" class="hidden-ui text-[10px] bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded shadow-lg transition-all w-full border border-red-400/30 flex items-center justify-center gap-2">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> TERMINATE LINK
+                    </button>
                 </div>
                 <div id="video-grid" class="hidden video-grid"></div>
             </div>
             
             <div id="tab-radio" class="hidden">
-                <!-- NEW SEARCH BAR -->
-                <input type="text" id="radio-search" class="radio-search-input" placeholder="🔍 Search genres (e.g., LoFi, Jazz, Cyberpunk)..." onkeyup="filterRadioList()">
-                <div id="radio-list" class="space-y-2 max-h-40 overflow-y-auto"><div class="cursor-pointer p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group">
-                    <div>
-                        <div class="text-xs text-white font-bold">Lofi Galaxy</div>
-                        <div class="text-[9px] text-purple-400">lofi chill</div>
+                <div class="space-y-2">
+                    <div onclick="playRadio(this, 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3')" class="cursor-pointer p-3 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group transition-all hover:border-cyan-500/30">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_5px_#06b6d4]"></span>
+                            <span class="text-xs text-gray-300 font-mono">Lofi Galaxy</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-600 group-hover:text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"></path></svg>
                     </div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:shadow-[0_0_8px_#06b6d4]"></div>
-                </div><div class="cursor-pointer p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group">
-                    <div>
-                        <div class="text-xs text-white font-bold">Cyberpunk City</div>
-                        <div class="text-[9px] text-purple-400">cyberpunk synthwave</div>
+                    <div onclick="playRadio(this, 'https://streams.ilovemusic.de/iloveradio17.mp3')" class="cursor-pointer p-3 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group transition-all hover:border-purple-500/30">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_5px_#a855f7]"></span>
+                            <span class="text-xs text-gray-300 font-mono">Cyberpunk City</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-600 group-hover:text-purple-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"></path></svg>
                     </div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:shadow-[0_0_8px_#06b6d4]"></div>
-                </div><div class="cursor-pointer p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group">
-                    <div>
-                        <div class="text-xs text-white font-bold">Deep Focus</div>
-                        <div class="text-[9px] text-purple-400">focus ambient</div>
-                    </div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:shadow-[0_0_8px_#06b6d4]"></div>
-                </div><div class="cursor-pointer p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group">
-                    <div>
-                        <div class="text-xs text-white font-bold">Classical Core</div>
-                        <div class="text-[9px] text-purple-400">classical</div>
-                    </div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:shadow-[0_0_8px_#06b6d4]"></div>
-                </div><div class="cursor-pointer p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group">
-                    <div>
-                        <div class="text-xs text-white font-bold">Techno Bunker</div>
-                        <div class="text-[9px] text-purple-400">techno</div>
-                    </div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:shadow-[0_0_8px_#06b6d4]"></div>
-                </div><div class="cursor-pointer p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group">
-                    <div>
-                        <div class="text-xs text-white font-bold">Jazz Lounge</div>
-                        <div class="text-[9px] text-purple-400">jazz</div>
-                    </div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:shadow-[0_0_8px_#06b6d4]"></div>
-                </div><div class="cursor-pointer p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group">
-                    <div>
-                        <div class="text-xs text-white font-bold">Retrowave FM</div>
-                        <div class="text-[9px] text-purple-400">retrowave 80s</div>
-                    </div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:shadow-[0_0_8px_#06b6d4]"></div>
-                </div><div class="cursor-pointer p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group">
-                    <div>
-                        <div class="text-xs text-white font-bold">Dark Ambient</div>
-                        <div class="text-[9px] text-purple-400">dark horror</div>
-                    </div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:shadow-[0_0_8px_#06b6d4]"></div>
-                </div></div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- ADMIN PANEL -->
-    <div id="admin-panel" class="fixed bottom-20 right-4 left-4 md:left-auto md:w-80 glass-panel rounded-xl border border-red-500/30 p-4 z-50 shadow-2xl hidden-ui">
-        <h3 class="text-red-400 font-header text-xs font-bold mb-3 uppercase flex justify-between">System Console <span id="gen-disp">GEN 1</span></h3>
+    <div id="admin-panel" class="hidden-ui fixed bottom-20 right-4 left-4 md:left-auto md:w-80 glass-panel rounded-xl border border-red-500/30 p-5 z-50 shadow-2xl bg-black/90">
+        <h3 class="text-red-400 font-header text-xs font-bold mb-4 uppercase flex justify-between items-center">
+            System Console
+            <span class="text-[9px] bg-red-900/50 px-2 py-0.5 rounded text-red-300">GEN 2</span>
+        </h3>
         
-        <div class="space-y-3">
+        <div class="space-y-4">
             <div>
-                <label class="text-[9px] text-gray-500 uppercase font-bold">Groq API Key</label>
-                <input type="password" id="api-key-input" class="w-full bg-black/50 border border-white/10 rounded p-2 text-white text-xs focus:border-red-500 outline-none" placeholder="gsk_...">
+                <label class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">Neural API Key (Groq)</label>
+                <input type="password" id="api-key-input" class="w-full bg-black/50 border border-white/10 rounded p-2.5 text-white text-xs focus:border-red-500 outline-none font-mono transition-colors" placeholder="gsk_...">
             </div>
-            <button onclick="saveApiKey()" class="w-full bg-red-900/50 hover:bg-red-800 text-red-200 text-[10px] font-bold py-2 rounded border border-red-500/30 transition-colors">SAVE &amp; RECONNECT</button>
-            <hr class="border-white/5">
-            <button onclick="resetSystem()" class="w-full bg-gray-800 hover:bg-gray-700 text-white text-[10px] font-bold py-2 rounded transition-colors">EMERGENCY RESET</button>
+            <button onclick="saveApiKey()" class="w-full bg-red-900/40 hover:bg-red-800/60 text-red-200 text-[10px] font-bold py-2.5 rounded border border-red-500/30 transition-all hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]">SAVE &amp; RECONNECT</button>
+            <hr class="border-white/10">
+            <button onclick="resetSystem()" class="w-full bg-white/5 hover:bg-red-900/20 text-white text-[10px] font-bold py-2 rounded transition-colors border border-white/10 hover:border-red-500/50">EMERGENCY SYSTEM RESET</button>
         </div>
     </div>
 
     <!-- PROFILE MODAL -->
-    <div id="profile-modal" class="hidden-ui fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-panel p-6 rounded-2xl border border-purple-500/30 max-w-sm w-full mx-4 text-center shadow-[0_0_50pxrgba(168,85,247,0.3)]">
-            <h3 class="text-white font-header font-bold mb-4 text-lg">USER IDENTITY</h3>
-            <div class="space-y-4">
-                <div class="flex flex-col items-center gap-2">
-                    <div id="profile-avatar-preview" class="w-20 h-20 rounded-full bg-gray-700 border-2 border-purple-500 overflow-hidden flex items-center justify-center text-2xl">
+    <div id="profile-modal" class="hidden-ui fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel p-8 rounded-2xl border border-purple-500/30 max-w-sm w-full mx-4 text-center shadow-[0_0_60px_rgba(168,85,247,0.2)]">
+            <h3 class="text-white font-header font-bold mb-6 text-lg tracking-wider">USER IDENTITY</h3>
+            <div class="space-y-6">
+                <div class="flex flex-col items-center gap-3">
+                    <div id="profile-avatar-preview" class="w-24 h-24 rounded-full bg-gray-800 border-2 border-purple-500 overflow-hidden flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(168,85,247,0.3)]">
                         👤
                     </div>
-                    <button onclick="document.getElementById('avatar-upload').click()" class="text-[10px] text-purple-300 underline">UPLOAD IMAGE</button>
+                    <button onclick="document.getElementById('avatar-upload').click()" class="text-[10px] text-purple-300 font-bold tracking-widest hover:text-white transition-colors border-b border-purple-500/30 pb-0.5">UPLOAD AVATAR</button>
                 </div>
-                <div><label class="block text-xs text-gray-400 mb-1 font-mono">NICKNAME</label><input type="text" id="edit-name" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none transition-colors"></div>
+                <div class="text-left">
+                    <label class="block text-xs text-cyan-400 mb-1 font-mono font-bold">CODENAME</label>
+                    <input type="text" id="edit-name" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none transition-colors font-mono">
+                </div>
             </div>
-            <div class="flex gap-2 mt-6">
-                <button onclick="saveProfile()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold py-2 rounded-lg shadow-lg">SAVE</button>
-                <button onclick="toggleProfile()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 rounded-lg">CANCEL</button>
+            <div class="flex gap-3 mt-8">
+                <button onclick="saveProfile()" class="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold py-2.5 rounded-lg shadow-lg transition-all transform hover:-translate-y-0.5">SAVE ID</button>
+                <button onclick="toggleProfile()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs font-bold py-2.5 rounded-lg border border-white/10 transition-all">CANCEL</button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="avatar-upload" class="hidden" accept="image/*">
+
+    <!-- GITHUB PUSH MODAL (NEW - FIXES STUCK ISSUE) -->
+    <div id="github-modal" class="hidden-ui fixed inset-0 z-[1005] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-2xl border border-purple-500/30 max-w-md w-full mx-4 shadow-[0_0_60px_rgba(168,85,247,0.2)]">
+            <h3 class="text-white font-header font-bold mb-6 text-lg tracking-wider flex items-center gap-2">
+                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg>
+                GITHUB UPLINK
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] text-cyan-400 mb-1 font-mono font-bold">USERNAME / ORG</label>
+                    <input type="text" id="gh-owner" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none transition-colors font-mono" placeholder="e.g. octocat">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-cyan-400 mb-1 font-mono font-bold">REPOSITORY</label>
+                    <input type="text" id="gh-repo" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none transition-colors font-mono" placeholder="e.g. Hello-World">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-red-400 mb-1 font-mono font-bold">PERSONAL ACCESS TOKEN (REPO SCOPE)</label>
+                    <input type="password" id="gh-token" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-red-500 outline-none transition-colors font-mono" placeholder="ghp_xxxxxxxxxxxx">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button onclick="toggleGitHubModal(false)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs font-bold py-2.5 rounded-lg border border-white/10 transition-all">ABORT</button>
+                <button onclick="executeGitHubPush()" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xs font-bold py-2.5 rounded-lg shadow-lg transition-all transform hover:-translate-y-0.5">INITIATE UPLINK</button>
             </div>
         </div>
     </div>
@@ -414,154 +441,45 @@
     <div id="code-editor-overlay" class="hidden-ui">
         <div class="h-12 border-b border-white/10 flex items-center justify-between px-4 bg-[#0d1117]">
             <div class="flex gap-2">
-                <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
             </div>
-            <span class="text-xs text-gray-400 font-mono">SYSTEM_EDITOR.EXE</span>
+            <span class="text-xs text-gray-400 font-mono tracking-widest">SYSTEM_EDITOR_V2.3</span>
             <div class="flex gap-2">
-                 <button onclick="pushToGitHub()" class="text-[10px] bg-black border border-white/20 hover:bg-white hover:text-black rounded px-2 transition-colors">⬆ PUSH TO GITHUB</button>
-                 <button onclick="toggleCodeEditor()" class="text-white hover:text-red-400 font-bold text-lg">×</button>
+                 <button onclick="toggleGitHubModal(true)" class="text-[10px] bg-black border border-white/20 hover:bg-white hover:text-black rounded px-2 transition-colors font-mono font-bold">PUSH TO GITHUB</button>
+                 <button onclick="toggleCodeEditor()" class="text-white hover:text-red-400 font-bold text-lg px-2">×</button>
             </div>
         </div>
         
         <div class="editor-body">
-            <textarea id="code-area" spellcheck="false"></textarea>
+            <textarea id="code-area" spellcheck="false" placeholder="// Write code here..."></textarea>
             
-            <div id="copilot-sidebar" class="flex flex-col">
-                <div class="h-10 border-b border-white/5 flex items-center px-4 bg-[#161b22]">
+            <!-- Desktop Sidebar -->
+            <div id="copilot-sidebar" class="copilot-sidebar flex flex-col">
+                <div class="h-10 border-b border-white/5 flex items-center px-4 bg-[#0d1117]">
                     <span class="text-cyan-400 text-xs font-bold flex items-center gap-2">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6v6l4 2"></path></svg>
                         COPILOT
                     </span>
                 </div>
                 
-                <div id="copilot-chat" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
-                    <div class="text-gray-500 italic text-center mt-4">Ask me to write HTML, CSS, or JS.</div>
-                <div class="flex justify-end"><div class="bg-purple-600 text-white p-2 rounded-lg text-xs max-w-[90%] break-words">Cha ge būkle tilte to aš taip noriu</div></div><div class="flex gap-2">
-                    <div class="w-6 h-6 rounded bg-cyan-600 flex items-center justify-center text-[10px] text-white shrink-0">AI</div>
-                    <div class="bg-black/40 border border-cyan-500/30 p-2 rounded text-[10px] font-mono text-cyan-100 max-h-40 overflow-y-auto w-full">&lt;title&gt;Aš taip noriu&lt;/title&gt;
-</div>
-                </div><div class="text-center my-2"><button onclick="applyCode(`&lt;title&gt;Aš taip noriu&lt;/title&gt;
-`)" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] px-3 py-1 rounded shadow-lg">APPLY PATCH</button></div><div class="flex justify-end"><div class="bg-purple-600 text-white p-2 rounded-lg text-xs max-w-[90%] break-words">Refresh</div></div><div class="flex gap-2">
-                    <div class="w-6 h-6 rounded bg-cyan-600 flex items-center justify-center text-[10px] text-white shrink-0">AI</div>
-                    <div class="bg-black/40 border border-cyan-500/30 p-2 rounded text-[10px] font-mono text-cyan-100 max-h-40 overflow-y-auto w-full">ctx.clearRect(0, 0, w, h);
-                
-stars.forEach(s =&gt; {
-    ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-    ctx.fill();
-    
-    s.y -= s.speed;
-    
-    if(s.y &lt; 0) {
-        s.y = h;
-        s.x = Math.random() * w;
-    }
-});
-                
-requestAnimationFrame(draw);
-draw();
-
-window.addEventListener('resize', () =&gt; {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-});
-
-function initMatrix() {
-    const canvas = document.getElementById('matrix-canvas');
-    if(canvas.dataset.running === "true") return;
-    canvas.dataset.running = "true";
-    
-    const ctx = canvas.getContext('2d');
-    let w = canvas.width = window.innerWidth;
-    let h = canvas.height = window.innerHeight;
-    
-    const cols = Math.floor(w / 20) + 1;
-    const ypos = Array(cols).fill(0);
-    
-    function matrix() {
-        ctx.fillStyle = '#0001';
-        ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = '#0f0';
-        ctx.font = '15pt monospace';
-        
-        ypos.forEach((y, ind) =&gt; {
-            const text = String.fromCharCode(Math.random() * 128);
-            const x = ind * 20;
-            ctx.fillText(text, x, y);
-            if (y &gt; 100 + Math.random() * 10000) ypos[ind] = 0;
-            else ypos[ind] = y + 20;
-        });
-    }
-    setInterval(matrix, 50);
-}
-
-location.reload();
-</div>
-                </div><div class="text-center my-2"><button onclick="applyCode(`ctx.clearRect(0, 0, w, h);
-                
-stars.forEach(s =&gt; {
-    ctx.fillStyle = \`rgba(255, 255, 255, \${s.opacity})\`;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-    ctx.fill();
-    
-    s.y -= s.speed;
-    
-    if(s.y &lt; 0) {
-        s.y = h;
-        s.x = Math.random() * w;
-    }
-});
-                
-requestAnimationFrame(draw);
-draw();
-
-window.addEventListener('resize', () =&gt; {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-});
-
-function initMatrix() {
-    const canvas = document.getElementById('matrix-canvas');
-    if(canvas.dataset.running === " true")="" return;="" canvas.dataset.running="true" ;="" const="" ctx="canvas.getContext('2d');" let="" w="canvas.width" =="" window.innerwidth;="" h="canvas.height" window.innerheight;="" cols="Math.floor(w" 20)="" +="" 1;="" ypos="Array(cols).fill(0);" function="" matrix()="" {="" ctx.fillstyle="#0001" ctx.fillrect(0,="" 0,="" w,="" h);="" ctx.font="15pt monospace" ypos.foreach((y,="" ind)=""> {
-            const text = String.fromCharCode(Math.random() * 128);
-            const x = ind * 20;
-            ctx.fillText(text, x, y);
-            if (y &gt; 100 + Math.random() * 10000) ypos[ind] = 0;
-            else ypos[ind] = y + 20;
-        });
-    }
-    setInterval(matrix, 50);
-}
-
-location.reload();
-`)" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] px-3 py-1 rounded shadow-lg"&gt;APPLY PATCH</button></div><div class="flex justify-end"><div class="bg-purple-600 text-white p-2 rounded-lg text-xs max-w-[90%] break-words">Create nes file asesu.json</div></div><div class="flex gap-2">
-                    <div class="w-6 h-6 rounded bg-cyan-600 flex items-center justify-center text-[10px] text-white shrink-0">AI</div>
-                    <div class="bg-black/40 border border-cyan-500/30 p-2 rounded text-[10px] font-mono text-cyan-100 max-h-40 overflow-y-auto w-full">json
-{
-  "name": "asesu",
-  "version": "1.0.0",
-  "description": "A JSON file for asesu",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
-}
-</div>
-                </div><div class="text-center my-2"><button onclick="applyCode(`json
-{
-  " name":="" "asesu",="" "version":="" "1.0.0",="" "description":="" "a="" json="" file="" for="" asesu",="" "main":="" "index.js",="" "scripts":="" {="" "start":="" "node="" index.js"="" },="" "keywords":="" [],="" "author":="" "",="" "license":="" "isc"="" }="" `)"="" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] px-3 py-1 rounded shadow-lg">APPLY PATCH</button></div></div>
-
-                <div class="p-3 bg-[#161b22] border-t border-white/5">
-                    <textarea id="copilot-input" class="w-full bg-black/50 border border-white/10 rounded p-2 text-white text-xs focus:border-cyan-500 outline-none resize-none" rows="2" placeholder="Type instructions..."></textarea>
-                    <button onclick="sendCopilot()" class="w-full mt-2 bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold py-1.5 rounded transition-colors">GENERATE</button>
+                <div id="copilot-chat" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs font-mono">
+                    <div class="text-gray-500 italic text-center mt-4 text-[10px]">&gt; SYSTEM READY. WAITING FOR INPUT...</div>
                 </div>
+
+                <div class="p-3 bg-[#0d1117] border-t border-white/5">
+                    <textarea id="copilot-input" class="w-full bg-black/50 border border-white/10 rounded p-2 text-white text-xs focus:border-cyan-500 outline-none resize-none font-mono" rows="2" placeholder="Type instructions..."></textarea>
+                    <button onclick="sendCopilot()" class="w-full mt-2 bg-cyan-700 hover:bg-cyan-600 text-white text-[10px] font-bold py-1.5 rounded transition-colors font-mono">GENERATE CODE</button>
+                </div>
+            </div>
+
+            <!-- Preview Area (Mobile/Desktop) -->
+            <div id="preview-area">
+                <div class="absolute top-2 right-2 z-10 flex gap-2">
+                    <button onclick="runCode()" class="bg-green-600 text-white text-[9px] px-2 py-1 rounded font-bold">RUN PREVIEW</button>
+                </div>
+                <iframe id="preview-frame" title="Preview"></iframe>
             </div>
         </div>
     </div>
@@ -570,11 +488,11 @@ location.reload();
         /* --- CONFIGURATION & STATE --- */
         const DEFAULT_MODEL = "llama-3.3-70b-versatile"; 
         let GROQ_API_KEY = localStorage.getItem('termos_groq_key') || "";
-        let SYSTEM_PROMPT = "You are TermOS Kernel AI. Respond concisely. Use valid HTML/CSS/JS if asked to code.";
+        let SYSTEM_PROMPT = "You are TermOS Kernel AI. You are a helpful, concise, and technical assistant. You have access to the System Event Log and the Current Code. When asked about recent changes, cross-reference the log with the code.";
         
-        // User Identity (Including Avatar)
+        // User Identity
         let userProfile = {
-            name: localStorage.getItem('termos_username') || 'User_' + Math.floor(Math.random() * 10000),
+            name: localStorage.getItem('termos_username') || 'User_' + Math.floor(Math.random() * 9999),
             avatar: localStorage.getItem('termos_avatar') || "👤"
         };
         let tempAvatarData = null;
@@ -583,27 +501,19 @@ location.reload();
         let mqttClient = null;
         let isAdmin = false;
 
-        // --- WEBRTC STATE (ROBUST FIX) ---
+        // --- SYSTEM MEMORY ---
+        let systemMemory = []; 
+        const MAX_MEMORY = 5;
+
+        // --- WEBRTC STATE ---
         let localStream = null;
-        const peers = {}; // Map: { "Username": RTCPeerConnection }
+        const peers = {}; 
         const rtcConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:global.stun.twilio.com:3478' }
             ]
         };
-
-        // --- RADIO DATABASE (SEARCHABLE) ---
-        const radioStations = [
-            { name: "Lofi Galaxy", genre: "lofi chill", url: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" },
-            { name: "Cyberpunk City", genre: "cyberpunk synthwave", url: "https://streams.ilovemusic.de/iloveradio17.mp3" },
-            { name: "Deep Focus", genre: "focus ambient", url: "https://stream.zeno.fm/0r0xa792kwzuv" },
-            { name: "Classical Core", genre: "classical", url: "https://media-ice.musicradio.com/ClassicMP3" },
-            { name: "Techno Bunker", genre: "techno", url: "https://stream.zeno.fm/f3wvbbqMDg8uv" },
-            { name: "Jazz Lounge", genre: "jazz", url: "https://stream.zeno.fm/s3p5x29s88zuv" },
-            { name: "Retrowave FM", genre: "retrowave 80s", url: "https://streams.ilovemusic.de/iloveradio16.mp3" },
-            { name: "Dark Ambient", genre: "dark horror", url: "https://stream.zeno.fm/yn0w2p5q02zuv" }
-        ];
 
         // --- DOM ELEMENTS ---
         const UI = {
@@ -616,6 +526,7 @@ location.reload();
             roomDisp: document.getElementById('room-display'),
             codeOverlay: document.getElementById('code-editor-overlay'),
             codeArea: document.getElementById('code-area'),
+            previewFrame: document.getElementById('preview-frame'),
             adminPanel: document.getElementById('admin-panel'),
             copilotChat: document.getElementById('copilot-chat'),
             copilotInput: document.getElementById('copilot-input'),
@@ -626,43 +537,67 @@ location.reload();
             videoGrid: document.getElementById('video-grid'),
             btnVideoEnable: document.getElementById('btn-enable-video'),
             btnVideoDisable: document.getElementById('btn-disable-video'),
-            radioList: document.getElementById('radio-list'),
-            radioSearch: document.getElementById('radio-search')
+            githubModal: document.getElementById('github-modal'),
+            ghOwner: document.getElementById('gh-owner'),
+            ghRepo: document.getElementById('gh-repo'),
+            ghToken: document.getElementById('gh-token')
         };
 
-        // --- SOUND FX ---
+        // --- AUDIO ENGINE (Synthesizer) ---
         const AudioFX = {
             ctx: new (window.AudioContext || window.webkitAudioContext)(),
-            playTone: function(freq, type, duration) {
+            playTone: function(freq, type, duration, vol = 0.05) {
                 if(this.ctx.state === 'suspended') this.ctx.resume();
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = type;
                 osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                osc.detune.setValueAtTime(Math.random() * 10 - 5, this.ctx.currentTime);
+                
+                gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.01);
                 gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
                 osc.start();
                 osc.stop(this.ctx.currentTime + duration);
             },
-            send: () => AudioFX.playTone(600, 'sine', 0.1),
-            receive: () => AudioFX.playTone(400, 'sine', 0.1),
-            error: () => AudioFX.playTone(150, 'sawtooth', 0.3),
-            system: () => AudioFX.playTone(800, 'triangle', 0.1)
+            send: () => {
+                AudioFX.playTone(800, 'sine', 0.1);
+                setTimeout(() => AudioFX.playTone(1200, 'sine', 0.1), 50);
+            },
+            receive: () => {
+                AudioFX.playTone(600, 'triangle', 0.15);
+            },
+            error: () => {
+                AudioFX.playTone(150, 'sawtooth', 0.4, 0.1);
+                setTimeout(() => AudioFX.playTone(100, 'sawtooth', 0.2, 0.1), 100);
+            },
+            system: () => {
+                AudioFX.playTone(400, 'square', 0.05);
+                setTimeout(() => AudioFX.playTone(600, 'square', 0.05), 50);
+                setTimeout(() => AudioFX.playTone(1000, 'square', 0.1), 100);
+            },
+            boot: () => {
+                let t = 0;
+                [200, 300, 400, 600, 800, 1200].forEach((f, i) => {
+                    setTimeout(() => AudioFX.playTone(f, 'sine', 0.1), i * 100);
+                });
+            }
         };
 
         /* --- INITIALIZATION --- */
         window.addEventListener('load', () => {
+            AudioFX.boot();
             setTimeout(() => {
                 UI.boot.style.opacity = '0';
                 setTimeout(() => {
                     UI.boot.remove();
-                    initCosmos(); 
+                    initGalaxy(); 
                     startSystem();
-                    renderRadioList(); // Init Radio List
                 }, 800);
-            }, 1500);
+            }, 2000);
 
             UI.sendBtn.addEventListener('click', handleInput);
             UI.input.addEventListener('keydown', (e) => {
@@ -710,6 +645,14 @@ location.reload();
             UI.input.focus();
         }
 
+        /* --- MEMORY MANAGEMENT --- */
+        function logSystemEvent(type, details) {
+            const timestamp = new Date().toLocaleTimeString();
+            systemMemory.unshift({ timestamp, type, details });
+            if(systemMemory.length > MAX_MEMORY) systemMemory.pop();
+            console.log("System Memory Updated:", systemMemory);
+        }
+
         /* --- API HANDLING --- */
         async function safeFetch(messages, jsonMode = false) {
             if (!GROQ_API_KEY) throw new Error("API Key Missing");
@@ -724,7 +667,7 @@ location.reload();
                     body: JSON.stringify({
                         model: DEFAULT_MODEL,
                         messages: messages,
-                        temperature: 0.7,
+                        temperature: 0.6,
                         max_tokens: 2048,
                         response_format: jsonMode ? { "type": "json_object" } : undefined
                     })
@@ -746,24 +689,47 @@ location.reload();
             }
         }
 
-        /* --- FIXED /ai COMMAND --- */
+        /* --- AI COMMAND HANDLER (WITH MEMORY) --- */
         async function processAICommand(prompt) {
+            if (!GROQ_API_KEY) {
+                addSystemMessage("⚠️ NEURAL LINK MISSING KEY", "error");
+                AudioFX.error();
+                toggleAdmin();
+                return;
+            }
+
+            addUserMessage(prompt, true, userProfile.name, userProfile.avatar);
+
             const id = 'ai-' + Date.now();
-            addThinking(id);
-            AudioFX.system();
-            
+            addThinking(id, "AI");
+
             try {
+                let contextStr = "";
+                if (systemMemory.length > 0) {
+                    contextStr = "\n\n[RECENT SYSTEM EVENTS]\n" + 
+                        systemMemory.map(m => `[${m.timestamp}] ${m.type}: ${m.details}`).join("\n");
+                }
+
+                const codeContext = UI.codeArea.value.slice(-3000) || "(No code loaded in editor yet)";
+
                 const messages = [
-                    { role: "system", content: SYSTEM_PROMPT },
+                    { role: "system", content: `${SYSTEM_PROMPT} ${contextStr}` },
+                    { role: "system", content: `CURRENT EDITOR CONTENT (Last 3000 chars):\n${codeContext}` },
                     { role: "user", content: prompt }
                 ];
-                
+
                 const reply = await safeFetch(messages);
+
                 removeThinking(id);
                 addAIMessage(reply);
+
             } catch (e) {
                 removeThinking(id);
                 addSystemMessage("AI Error: " + e.message, "error");
+                
+                if(e.message.includes("401") || e.message.includes("API Key")) {
+                    setTimeout(() => toggleAdmin(), 1000);
+                }
             }
         }
 
@@ -847,41 +813,6 @@ location.reload();
             }
         }
 
-        /* --- RADIO SEARCH LOGIC --- */
-        function renderRadioList(query = "") {
-            UI.radioList.innerHTML = "";
-            const lowerQuery = query.toLowerCase();
-
-            const filtered = radioStations.filter(st => 
-                st.name.toLowerCase().includes(lowerQuery) || 
-                st.genre.toLowerCase().includes(lowerQuery)
-            );
-
-            if (filtered.length === 0) {
-                UI.radioList.innerHTML = `<div class="text-center text-gray-500 text-xs p-2">No stations found.</div>`;
-                return;
-            }
-
-            filtered.forEach(st => {
-                const div = document.createElement('div');
-                div.className = "cursor-pointer p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 flex justify-between items-center group";
-                div.onclick = (e) => playRadio(e.currentTarget, st.url);
-                div.innerHTML = `
-                    <div>
-                        <div class="text-xs text-white font-bold">${st.name}</div>
-                        <div class="text-[9px] text-purple-400">${st.genre}</div>
-                    </div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:shadow-[0_0_8px_#06b6d4]"></div>
-                `;
-                UI.radioList.appendChild(div);
-            });
-        }
-
-        function filterRadioList() {
-            const query = UI.radioSearch.value;
-            renderRadioList(query);
-        }
-
         /* --- ROBUST WEBRTC LOGIC --- */
         async function startWebRTC() {
             try {
@@ -894,6 +825,7 @@ location.reload();
                 
                 addLocalVideo(stream);
                 addSystemMessage("📹 Uplink Established. Broadcasting...", "info");
+                AudioFX.system();
 
                 broadcastWebRTC({ type: 'video_ready' });
 
@@ -918,22 +850,16 @@ location.reload();
             UI.btnVideoEnable.classList.remove('hidden-ui');
 
             addSystemMessage("📹 Uplink Terminated.", "warning");
-            
             broadcastWebRTC({ type: 'video_stop' });
         }
 
-        // --- CORE WEBRTC FUNCTIONS ---
-
-        // When I receive an Offer from someone else
         async function handleOffer(data) {
             const sender = data.user;
             if(sender === userProfile.name) return;
 
-            // If we already have a connection, handle Glare
             if (peers[sender]) {
                 const pc = peers[sender];
                 if (pc.signalingState === 'have-local-offer') {
-                     // Glare detected! Accept theirs.
                      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
                      const answer = await pc.createAnswer();
                      await pc.setLocalDescription(answer);
@@ -942,7 +868,6 @@ location.reload();
                 }
             }
 
-            // New connection
             const pc = createPeerConnection(sender);
             if(pc) {
                 await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
@@ -952,30 +877,24 @@ location.reload();
             }
         }
 
-        // When I receive an Answer to my Offer
         async function handleAnswer(data) {
             const sender = data.user;
             const pc = peers[sender];
             if(pc) await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
         }
 
-        // ICE Candidates
         async function handleCandidate(data) {
             const sender = data.user;
             const pc = peers[sender];
             if(pc) {
                 try {
                     await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                } catch (e) {
-                    console.log("Candidate Error (Ignored)", e);
-                }
+                } catch (e) { console.log("Candidate Error", e); }
             }
         }
 
-        // When I see someone turned on their camera
         function handleVideoReady(sender) {
             if(sender === userProfile.name) return;
-            // If I have a camera on, and I don't have a connection to them yet: OFFER.
             if (localStream && !peers[sender]) {
                 console.log(`Saw ${sender} ready. Initiating offer...`);
                 initiateCall(sender);
@@ -983,7 +902,7 @@ location.reload();
         }
 
         async function initiateCall(remoteUser) {
-            if(peers[remoteUser]) return; // Already connecting or connected
+            if(peers[remoteUser]) return; 
 
             const pc = createPeerConnection(remoteUser);
             if(!pc) return;
@@ -992,9 +911,7 @@ location.reload();
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 broadcastWebRTC({ type: 'offer', sdp: offer, target: remoteUser });
-            } catch(e) {
-                console.error("Offer creation failed", e);
-            }
+            } catch(e) { console.error("Offer creation failed", e); }
         }
 
         function createPeerConnection(remoteUser) {
@@ -1014,15 +931,14 @@ location.reload();
                 const div = document.createElement('div');
                 div.id = `vid-remote-${remoteUser}`;
                 div.className = "video-container remote";
-                // FIX: Added 'muted' to allow autoplay
                 div.innerHTML = `<video autoplay playsinline muted></video><div class="remote-label">${remoteUser}</div>`;
                 div.querySelector('video').srcObject = e.streams[0];
                 UI.videoGrid.appendChild(div);
+                UI.videoGrid.classList.remove('hidden');
                 AudioFX.system();
             };
 
             pc.onconnectionstatechange = () => {
-                console.log(`Connection state with ${remoteUser}: ${pc.connectionState}`);
                 if(pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
                     delete peers[remoteUser];
                     const el = document.getElementById(`vid-remote-${remoteUser}`);
@@ -1041,9 +957,10 @@ location.reload();
             const div = document.createElement('div');
             div.id = "vid-local";
             div.className = "video-container local";
-            div.innerHTML = `<video autoplay muted playsinline></video><div class="remote-label">ME</div>`;
+            div.innerHTML = `<video autoplay muted playsinline></video><div class="remote-label" style="color:#d8b4fe; border-color:rgba(216,180,254,0.3)">ME</div>`;
             div.querySelector('video').srcObject = stream;
             UI.videoGrid.appendChild(div);
+            UI.videoGrid.classList.remove('hidden');
         }
 
         function broadcastWebRTC(payload) {
@@ -1086,30 +1003,36 @@ location.reload();
                 switch(name) {
                     case 'matrix':
                         this.toggleMatrix();
+                        logSystemEvent('MODULE INSTALL', 'Matrix Rain visual effect activated');
                         break;
                     case 'neon':
-                        document.documentElement.style.setProperty('--accent-primary', '#d946ef');
-                        document.documentElement.style.setProperty('--msg-user-bg', '#be185d');
+                        document.documentElement.style.setProperty('--accent-primary', '#f0abfc');
+                        document.documentElement.style.setProperty('--glass-border', 'rgba(240, 171, 252, 0.4)');
                         addSystemMessage("Theme: Neon Pink", "info");
+                        logSystemEvent('THEME CHANGE', 'Switched to Neon Pink');
                         break;
                     case 'cyber':
                         document.documentElement.style.setProperty('--accent-primary', '#facc15');
-                        document.documentElement.style.setProperty('--msg-user-bg', '#ca8a04');
+                        document.documentElement.style.setProperty('--glass-border', 'rgba(250, 204, 21, 0.4)');
                         addSystemMessage("Theme: Cyber Yellow", "info");
+                        logSystemEvent('THEME CHANGE', 'Switched to Cyber Yellow');
                         break;
                     default:
                         addSystemMessage("Module not found: " + name, "warning");
                 }
             },
             toggleMatrix: function() {
-                const mCanvas = document.getElementById('matrix-canvas');
-                if(mCanvas.style.display === 'block') {
-                    mCanvas.style.display = 'none';
+                const canvas = document.getElementById('galaxy-canvas');
+                if(canvas.dataset.mode === 'matrix') {
+                    canvas.dataset.mode = 'galaxy';
+                    initGalaxy();
                     addSystemMessage("Module Matrix: Disabled", "warning");
+                    logSystemEvent('MODULE DISABLE', 'Matrix Rain visual effect deactivated');
                 } else {
-                    mCanvas.style.display = 'block';
+                    canvas.dataset.mode = 'matrix';
                     initMatrix(); 
                     addSystemMessage("Module Matrix: Active", "info");
+                    logSystemEvent('MODULE INSTALL', 'Matrix Rain visual effect activated');
                 }
             }
         };
@@ -1128,37 +1051,37 @@ location.reload();
         /* --- UI COMPONENTS --- */
         function addSystemMessage(text, type = 'info') {
             const div = document.createElement('div');
-            div.className = "flex justify-center my-3 z-10 msg-anim";
+            div.className = "flex justify-center my-4 z-10 msg-anim";
             
-            let bg = "bg-purple-900/30 border-purple-500/30";
+            let bg = "bg-purple-900/20 border-purple-500/20";
             let icon = "ℹ️";
             
             if(type === 'error') { 
-                bg = "bg-red-900/30 border-red-500/50 api-error-pulse"; 
+                bg = "bg-red-900/20 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]"; 
                 icon = "⚠️";
             }
-            if(type === 'warning') { bg = "bg-yellow-900/30 border-yellow-500/30"; icon = "⚡"; }
-            if(type === 'join') { bg = "bg-green-900/30 border-green-500/30"; icon = "➕"; }
+            if(type === 'warning') { bg = "bg-yellow-900/20 border-yellow-500/20"; icon = "⚡"; }
+            if(type === 'join') { bg = "bg-cyan-900/20 border-cyan-500/20 shadow-[0_0_10px_rgba(34,211,238,0.2)]"; icon = "➕"; }
 
-            div.innerHTML = `<span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border ${bg} flex items-center gap-2">${icon} ${text}</span>`;
+            div.innerHTML = `<span class="px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border ${bg} flex items-center gap-2 backdrop-blur-md shadow-lg">${icon} ${text}</span>`;
             UI.chat.appendChild(div);
             scrollToBottom();
         }
 
         function addUserMessage(text, isMe, senderName, senderAvatar) {
             const div = document.createElement('div');
-            div.className = `flex gap-3 my-1 msg-anim ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
+            div.className = `flex gap-3 my-2 msg-anim ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
             
-            let avatarHTML = `<div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">?</div>`;
+            let avatarHTML = `<div class="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0 border border-white/10">?</div>`;
             
             if (senderAvatar) {
                 if(senderAvatar.startsWith('data:') || senderAvatar.startsWith('http')) {
-                    avatarHTML = `<div class="w-8 h-8 rounded-full overflow-hidden border border-white/20 shrink-0"><img src="${senderAvatar}" class="w-full h-full object-cover"></div>`;
+                    avatarHTML = `<div class="w-9 h-9 rounded-full overflow-hidden border border-white/20 shrink-0 shadow-md"><img src="${senderAvatar}" class="w-full h-full object-cover"></div>`;
                 } else {
-                    avatarHTML = `<div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-lg shrink-0 border border-white/10">${senderAvatar}</div>`;
+                    avatarHTML = `<div class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center text-lg shrink-0 border border-white/10">${senderAvatar}</div>`;
                 }
             } else {
-                avatarHTML = `<div class="w-8 h-8 rounded-full bg-${isMe?'purple':'cyan'}-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">${senderName.substring(0,2).toUpperCase()}</div>`;
+                avatarHTML = `<div class="w-9 h-9 rounded-full bg-${isMe?'purple':'cyan'}-900/50 flex items-center justify-center text-[10px] font-bold text-white shrink-0 border border-${isMe?'purple':'cyan'}-500/30">${senderName.substring(0,2).toUpperCase()}</div>`;
             }
 
             const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -1167,19 +1090,23 @@ location.reload();
                 div.innerHTML = `
                     ${avatarHTML}
                     <div class="flex flex-col items-end max-w-[80%]">
-                        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-2.5 rounded-2xl rounded-tr-none text-sm shadow-md break-words">${escapeHtml(text)}</div>
-                        <div class="text-[9px] text-gray-500 mt-0.5 mr-1">${time}</div>
+                        <div class="bg-gradient-to-r from-purple-700 to-indigo-700 text-white p-3 rounded-2xl rounded-tr-none text-sm shadow-md border border-purple-500/30 break-words">
+                            ${escapeHtml(text)}
+                        </div>
+                        <div class="text-[9px] text-gray-500 mt-1 mr-1 font-mono">${time}</div>
                     </div>
                 `;
             } else {
                 div.innerHTML = `
                     ${avatarHTML}
                     <div class="flex flex-col items-start max-w-[80%]">
-                        <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-[10px] text-cyan-400 font-bold">${escapeHtml(senderName)}</span>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[10px] text-cyan-400 font-bold font-header tracking-wide">${escapeHtml(senderName)}</span>
                         </div>
-                        <div class="bg-white/10 border border-white/5 text-gray-200 p-2.5 rounded-2xl rounded-tl-none text-sm shadow-md break-words">${escapeHtml(text)}</div>
-                        <div class="text-[9px] text-gray-500 mt-0.5 ml-1">${time}</div>
+                        <div class="bg-white/10 border border-white/10 text-gray-100 p-3 rounded-2xl rounded-tl-none text-sm shadow-md break-words backdrop-blur-sm">
+                            ${escapeHtml(text)}
+                        </div>
+                        <div class="text-[9px] text-gray-500 mt-1 ml-1 font-mono">${time}</div>
                     </div>
                 `;
             }
@@ -1194,9 +1121,9 @@ location.reload();
             const htmlContent = parseMarkdown(text);
             
             div.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0">AI</div>
-                <div class="flex-1 bg-slate-800/50 backdrop-blur border border-cyan-500/20 p-3 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md">
-                    <div class="markdown-body text-xs">${htmlContent}</div>
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0 border border-cyan-400/50">AI</div>
+                <div class="flex-1 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 p-4 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md">
+                    <div class="markdown-body text-xs leading-relaxed">${htmlContent}</div>
                 </div>
             `;
             UI.chat.appendChild(div);
@@ -1209,11 +1136,12 @@ location.reload();
             div.id = id;
             div.className = "flex gap-3 my-2 msg-anim";
             div.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center animate-pulse text-[10px] font-bold">${label}</div>
-                <div class="flex items-center gap-1 h-8 bg-white/5 px-3 rounded-full">
-                    <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></div>
-                    <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                    <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center animate-pulse text-[10px] font-bold border border-white/10">${label}</div>
+                <div class="flex items-center gap-2 h-10 bg-white/5 px-4 rounded-full border border-white/5">
+                    <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></span>
+                    <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+                    <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                    <span class="text-[10px] text-cyan-400 ml-2 font-mono">PROCESSING</span>
                 </div>
             `;
             UI.chat.appendChild(div);
@@ -1243,10 +1171,8 @@ location.reload();
                 history.forEach(msg => {
                     if(msg.type === 'chat') addUserMessage(msg.text, msg.isMe, msg.user, null);
                 });
-                if(history.length > 0) addSystemMessage(`Restored ${history.length} messages from local cache.`, "info");
-            } catch(e) {
-                console.error("History load error", e);
-            }
+                if(history.length > 0) addSystemMessage(`Restored ${history.length} messages from cache.`, "info");
+            } catch(e) { console.error("History load error", e); }
         }
 
         /* --- COPILOT / IDE --- */
@@ -1254,9 +1180,12 @@ location.reload();
             const isHidden = UI.codeOverlay.classList.contains('hidden-ui');
             
             if (isHidden) {
-                UI.codeArea.value = document.documentElement.outerHTML;
+                if(!UI.codeArea.value) {
+                    UI.codeArea.value = document.documentElement.outerHTML;
+                }
                 UI.codeOverlay.classList.remove('hidden-ui');
                 UI.codeOverlay.classList.add('flex-ui');
+                setTimeout(runCode, 500);
                 UI.copilotInput.focus();
             } else {
                 UI.codeOverlay.classList.add('hidden-ui');
@@ -1270,6 +1199,14 @@ location.reload();
             setTimeout(() => UI.copilotInput.focus(), 100);
         }
 
+        function runCode() {
+            const code = UI.codeArea.value;
+            const doc = UI.previewFrame.contentDocument || UI.previewFrame.contentWindow.document;
+            doc.open();
+            doc.write(code);
+            doc.close();
+        }
+
         async function sendCopilot() {
             const prompt = UI.copilotInput.value.trim();
             if(!prompt) return;
@@ -1277,19 +1214,25 @@ location.reload();
             UI.copilotInput.value = '';
             const uDiv = document.createElement('div');
             uDiv.className = "flex justify-end";
-            uDiv.innerHTML = `<div class="bg-purple-600 text-white p-2 rounded-lg text-xs max-w-[90%] break-words">${escapeHtml(prompt)}</div>`;
+            uDiv.innerHTML = `<div class="bg-purple-900/50 text-purple-100 p-2 rounded-lg text-xs max-w-[90%] break-words border border-purple-500/20 font-mono">${escapeHtml(prompt)}</div>`;
             UI.copilotChat.appendChild(uDiv);
 
             const tDiv = document.createElement('div');
-            tDiv.className = "text-cyan-500 text-xs italic animate-pulse";
-            tDiv.innerText = "Generating...";
+            tDiv.className = "text-cyan-500 text-xs italic animate-pulse font-mono flex items-center gap-2";
+            tDiv.innerHTML = `<span class="w-1 h-1 bg-cyan-500 rounded-full animate-ping"></span> GENERATING...`;
             UI.copilotChat.appendChild(tDiv);
             UI.copilotChat.scrollTop = UI.copilotChat.scrollHeight;
 
             try {
+                let memoryStr = "";
+                if (systemMemory.length > 0) {
+                    memoryStr = "\n[RECENT SYSTEM EVENTS]\n" + 
+                        systemMemory.map(m => `- ${m.type}: ${m.details}`).join("\n");
+                }
+
                 const codeContext = UI.codeArea.value.substring(UI.codeArea.value.length - 2000);
                 const messages = [
-                    { role: "system", content: "You are an expert frontend engineer. Return ONLY code block, no explanation." },
+                    { role: "system", content: `You are an expert frontend engineer. Return ONLY the code block (HTML/CSS/JS) without markdown ticks or explanation. If asked for explanation, keep it brief. ${memoryStr}` },
                     { role: "user", content: `Current Code Context:\n${codeContext}\n\nRequest: ${prompt}` }
                 ];
                 
@@ -1301,20 +1244,20 @@ location.reload();
 
                 tDiv.remove();
                 const aDiv = document.createElement('div');
-                aDiv.className = "flex gap-2";
+                aDiv.className = "flex gap-2 msg-anim";
                 aDiv.innerHTML = `
-                    <div class="w-6 h-6 rounded bg-cyan-600 flex items-center justify-center text-[10px] text-white shrink-0">AI</div>
-                    <div class="bg-black/40 border border-cyan-500/30 p-2 rounded text-[10px] font-mono text-cyan-100 max-h-40 overflow-y-auto w-full">${escapeHtml(reply)}</div>
+                    <div class="w-6 h-6 rounded bg-cyan-700 flex items-center justify-center text-[10px] text-white shrink-0 font-bold">AI</div>
+                    <div class="bg-black/60 border border-cyan-500/30 p-2 rounded text-[10px] font-mono text-cyan-100 max-h-40 overflow-y-auto w-full shadow-inner">${escapeHtml(reply)}</div>
                 `;
                 UI.copilotChat.appendChild(aDiv);
                 
                 const btnDiv = document.createElement('div');
-                btnDiv.className = "text-center my-2";
-                btnDiv.innerHTML = `<button onclick="applyCode(\`${escapeJs(reply)}\`)" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] px-3 py-1 rounded shadow-lg">APPLY PATCH</button>`;
+                btnDiv.className = "text-center my-2 msg-anim";
+                btnDiv.innerHTML = `<button onclick="applyCode(\`${escapeJs(reply)}\`)" class="bg-cyan-700 hover:bg-cyan-600 text-white text-[10px] px-3 py-1.5 rounded shadow-lg border border-cyan-500/50 transition-all">APPLY PATCH</button>`;
                 UI.copilotChat.appendChild(btnDiv);
 
             } catch (e) {
-                tDiv.innerText = "Error: " + e.message;
+                tDiv.innerText = "ERROR: " + e.message;
                 tDiv.classList.add('text-red-500');
             }
         }
@@ -1324,96 +1267,161 @@ location.reload();
             const text = UI.codeArea.value;
             const newText = text.slice(0, cursorPos) + "\n" + code + "\n" + text.slice(cursorPos);
             UI.codeArea.value = newText;
-            addSystemMessage("Code applied to buffer.", "info");
+            logSystemEvent('PATCH APPLIED', `User applied code patch via Copilot. Length: ${code.length} chars.`);
+            runCode();
+            addSystemMessage("Patch applied successfully.", "info");
         }
 
         function escapeJs(str) {
             return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
         }
 
-        /* --- FIXED GITHUB EVOLUTION --- */
-        async function pushToGitHub() {
-            const owner = prompt("GitHub Username:");
-            if(!owner) return;
-            const repo = prompt("Repository Name:");
-            if(!repo) return;
-            const token = prompt("Personal Access Token (needs repo scope):");
-            if(!token) return;
+        /* --- GITHUB PUSH LOGIC (FIXED) --- */
+        function toggleGitHubModal(show) {
+            if(show) {
+                UI.githubModal.classList.remove('hidden-ui');
+                UI.githubModal.classList.add('flex-ui');
+                UI.ghOwner.value = "";
+                UI.ghRepo.value = "";
+                UI.ghToken.value = "";
+                UI.ghOwner.focus();
+            } else {
+                UI.githubModal.classList.add('hidden-ui');
+                UI.githubModal.classList.remove('flex-ui');
+            }
+        }
+
+        async function executeGitHubPush() {
+            const owner = UI.ghOwner.value.trim();
+            const repo = UI.ghRepo.value.trim();
+            const token = UI.ghToken.value.trim();
+
+            if(!owner || !repo || !token) {
+                alert("⚠️ Please fill in all credentials.");
+                return;
+            }
+
+            // Close Modal before starting
+            toggleGitHubModal(false);
+
+            // Helper to log steps to the chat
+            const logStep = (msg) => {
+                const div = document.createElement('div');
+                div.className = "flex items-start gap-2 my-2 msg-anim";
+                div.innerHTML = `
+                    <span class="text-[10px] text-cyan-500 font-mono mt-1">>></span>
+                    <span class="text-xs text-gray-300 font-mono">${msg}</span>
+                `;
+                UI.chat.appendChild(div);
+                scrollToBottom();
+            };
 
             const path = "index.html";
             const content = UI.codeArea.value;
+            
+            // Validate
+            if(content.length > 500000) {
+                alert("❌ Error: File too large (>500KB).");
+                return;
+            }
+            if(!content.trim()) {
+                alert("❌ Error: Editor is empty.");
+                return;
+            }
+
+            // Indicate Loading in Button
+            const btn = document.querySelector('button[onclick="toggleGitHubModal(true)"]');
+            const originalText = btn.innerText;
+            btn.innerText = "UPLOADING...";
+            btn.disabled = true;
+
             const encodedContent = btoa(unescape(encodeURIComponent(content)));
 
-            let defaultBranch = "main"; 
+            async function githubFetch(url, options = {}) {
+                const headers = {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                };
+                try {
+                    const res = await fetch(url, { ...options, headers });
+                    return res;
+                } catch (e) {
+                    throw new Error("Network Connection Failed");
+                }
+            }
+
             try {
-                const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
+                logStep(`Authenticating user '${owner}'...`);
+                const userRes = await githubFetch('https://api.github.com/user');
+                if(!userRes.ok) {
+                    const d = await userRes.json();
+                    throw new Error(`Auth Failed: ${d.message}. (Check Token/Scope)`);
+                }
+                const userData = await userRes.json();
+                logStep(`Authenticated as ${userData.login}.`);
                 
-                if (!repoRes.ok) {
-                    if(repoRes.status === 404) {
-                        alert("❌ Repository Not Found.\nPlease check Username and Repository Name spelling.");
-                        return;
-                    }
-                    if(repoRes.status === 401 || repoRes.status === 403) {
-                        alert("❌ Authentication Failed.\nCheck your Token permissions (needs 'repo' scope).");
-                        return;
-                    }
-                    const err = await repoRes.json();
-                    throw new Error(err.message);
-                }
-
+                logStep(`Locating repository '${owner}/${repo}'...`);
+                const repoRes = await githubFetch(`https://api.github.com/repos/${owner}/${repo}`);
+                if(repoRes.status === 404) throw new Error("Repository not found or private without access.");
+                if(repoRes.status === 403) throw new Error("Forbidden. Check permissions.");
+                
                 const repoData = await repoRes.json();
-                defaultBranch = repoData.default_branch;
-                console.log("Default Branch detected:", defaultBranch);
+                logStep(`Found repo: ${repoData.name}. Size: ${repoData.size}.`);
 
-            } catch (e) {
-                alert("❌ Connection Error: " + e.message);
-                return;
-            }
-
-            let sha = null;
-            try {
-                const fileRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${defaultBranch}`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-
-                if (fileRes.ok) {
-                    const fileData = await fileRes.json();
-                    sha = fileData.sha;
-                } else if (fileRes.status !== 404) {
-                    throw new Error(`File Check Failed: ${fileRes.status}`);
+                // Empty Repo Check
+                if(repoData.size === 0) {
+                    throw new Error("Repository is empty (0 commits). Please create a file (e.g., README.md) on GitHub first to initialize the branch.");
                 }
-            } catch (e) {
-                alert("❌ Error checking file: " + e.message);
-                return;
-            }
 
-            try {
+                let branch = repoData.default_branch || "main";
+                logStep(`Target branch: ${branch}`);
+
+                logStep(`Checking for existing file '${path}'...`);
+                let sha = null;
+                try {
+                    const fileRes = await githubFetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`);
+                    if(fileRes.ok) {
+                        const fileData = await fileRes.json();
+                        sha = fileData.sha;
+                        logStep(`File exists. Updating existing content...`);
+                    }
+                } catch (e) {
+                    logStep(`File not found. Creating new file...`);
+                }
+
+                logStep(`Encoding & Uploading content...`);
                 const body = {
-                    message: "Update from TermOS",
+                    message: `Update from TermOS Galactic [${new Date().toLocaleTimeString()}]`,
                     content: encodedContent,
-                    branch: defaultBranch
+                    branch: branch
                 };
                 if (sha) body.sha = sha; 
 
-                const putRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                const putRes = await githubFetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
                     method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify(body)
                 });
 
-                if(putRes.ok) {
-                    alert("✅ Successfully pushed to GitHub!");
-                } else {
+                if(!putRes.ok) {
                     const err = await putRes.json();
-                    alert("❌ GitHub Error: " + err.message);
+                    throw new Error(`Upload Failed: ${err.message}`);
                 }
+
+                const result = await putRes.json();
+                logStep(`✅ Success! Committed at: ${result.commit.html_url}`);
+                alert("✅ Successfully pushed to GitHub!");
+                logSystemEvent('GITHUB PUSH', `Pushed to ${owner}/${repo} on branch ${branch}.`);
+
             } catch (e) {
-                alert("❌ Network Error: " + e.message);
+                console.error(e);
+                logStep(`❌ ${e.message}`);
+                alert("❌ GitHub Push Failed:\n" + e.message);
+                addSystemMessage("Push Failed: " + e.message, "error");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -1428,7 +1436,7 @@ location.reload();
             try {
                 const context = `Time: ${new Date().toLocaleTimeString()}, User: ${userProfile.name}, Room: ${currentRoom}`;
                 const messages = [
-                    { role: "system", content: `You are TermOS Kernel. ${context}. Suggest a system update or interesting fact about galaxy.` },
+                    { role: "system", content: `You are TermOS Kernel. ${context}. Provide a cryptic but interesting system status update or space fact.` },
                     { role: "user", content: "Analyze system state." }
                 ];
                 
@@ -1436,12 +1444,15 @@ location.reload();
                 removeThinking(id);
                 
                 const div = document.createElement('div');
-                div.className = "flex gap-3 my-4 msg-anim border border-cyan-500/30 bg-cyan-900/10 p-3 rounded-xl relative overflow-hidden";
+                div.className = "flex gap-3 my-4 msg-anim border border-cyan-500/30 bg-cyan-900/10 p-4 rounded-xl relative overflow-hidden backdrop-blur-md";
                 div.innerHTML = `
-                    <div class="absolute inset-0 bg-cyan-400/5 animate-pulse"></div>
+                    <div class="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
                     <div class="relative z-10">
-                        <div class="text-[10px] text-cyan-400 font-bold tracking-widest mb-1">KERNEL_THOUGHT_PROCESS.EXE</div>
-                        <div class="text-sm text-gray-200 font-light leading-relaxed">${escapeHtml(reply)}</div>
+                        <div class="text-[10px] text-cyan-400 font-bold tracking-widest mb-2 flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse"></span>
+                            KERNEL_THOUGHT_PROCESS.EXE
+                        </div>
+                        <div class="text-sm text-gray-200 font-light leading-relaxed font-mono">${escapeHtml(reply)}</div>
                     </div>
                 `;
                 UI.chat.appendChild(div);
@@ -1465,13 +1476,15 @@ location.reload();
 
         function updateStatus(active) {
             if(active) {
-                UI.apiDot.className = "w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80]";
-                UI.roomDisp.innerText = currentRoom === "public" ? "PUBLIC CHANNEL" : `ROOM: ${currentRoom.toUpperCase()}`;
+                UI.apiDot.className = "w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80] animate-pulse";
+                UI.roomDisp.innerText = currentRoom === "public" ? "PUBLIC GRID" : `ROOM: ${currentRoom.toUpperCase()}`;
                 UI.roomDisp.classList.add("text-green-400");
+                UI.roomDisp.classList.remove("text-red-500");
             } else {
-                UI.apiDot.className = "w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse";
+                UI.apiDot.className = "w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]";
                 UI.roomDisp.innerText = "OFFLINE";
                 UI.roomDisp.classList.remove("text-green-400");
+                UI.roomDisp.classList.add("text-red-500");
             }
         }
 
@@ -1492,8 +1505,9 @@ location.reload();
                 GROQ_API_KEY = key;
                 localStorage.setItem('termos_groq_key', key);
                 updateStatus(true);
-                addSystemMessage("API Key Updated.", "info");
+                addSystemMessage("API Key Updated. Reconnecting...", "info");
                 connectMQTT();
+                toggleAdmin();
             }
         }
 
@@ -1550,7 +1564,7 @@ location.reload();
         function connectMQTT() {
             if (typeof Paho === 'undefined') return;
             
-            const clientId = "termos_client_" + Math.random().toString(16).substr(2, 8);
+            const clientId = "termos_galactic_" + Math.random().toString(16).substr(2, 8);
             mqttClient = new Paho.MQTT.Client("broker.emqx.io", 8084, "/mqtt", clientId);
 
             mqttClient.onConnectionLost = (responseObject) => {
@@ -1569,9 +1583,8 @@ location.reload();
                         }
                     }
 
-                    // FIX: When someone Joins, if I have video on, I Offer them.
                     if (payload.type === 'join' && sender !== userProfile.name) {
-                         addSystemMessage(`${sender} joined.`, "join");
+                         addSystemMessage(`${sender} entered the sector.`, "join");
                          AudioFX.system();
                          if(localStream) {
                              initiateCall(sender);
@@ -1591,19 +1604,19 @@ location.reload();
             };
 
             const options = {
-                timeout: 3,
+                timeout: 5,
                 useSSL: true,
                 onSuccess: () => {
                     mqttClient.subscribe("termos/public", { qos: 1 });
                     updateStatus(true);
-                    const joinMsg = new Paho.MQTT.Message(JSON.stringify({ type: 'join', user: userProfile.name }));
+                    const joinMsg = new Paho.MQTT.Message(JSON.stringify({ type: 'join', user: userProfile.name, avatar: userProfile.avatar }));
                     joinMsg.destinationName = "termos/public";
                     mqttClient.send(joinMsg);
                     addSystemMessage("Connected to Galactic Grid.", "info");
                 },
                 onFailure: (message) => {
                     updateStatus(false);
-                    addSystemMessage("MQTT Connection Failed.", "error");
+                    addSystemMessage("Connection Failed. Retrying...", "error");
                 }
             };
             mqttClient.connect(options);
@@ -1619,10 +1632,10 @@ location.reload();
             }
             currentRoom = roomName;
             updateStatus(true);
-            addSystemMessage(`Switched to frequency: ${roomName}`, "info");
+            addSystemMessage(`Frequency switched to: ${roomName}`, "info");
             if (mqttClient && mqttClient.isConnected()) {
-                mqttClient.subscribe(`termos/rooms/${currentRoom}`, { qos:1 });
-                const joinMsg = new Paho.MQTT.Message(JSON.stringify({ type: 'join', user: userProfile.name }));
+                mqttClient.subscribe(`termos/rooms/${currentRoom}`, { qos: 1 });
+                const joinMsg = new Paho.MQTT.Message(JSON.stringify({ type: 'join', user: userProfile.name, avatar: userProfile.avatar }));
                 joinMsg.destinationName = `termos/rooms/${currentRoom}`;
                 mqttClient.send(joinMsg);
             }
@@ -1642,55 +1655,106 @@ location.reload();
             document.getElementById('tab-video').classList.add('hidden');
             document.getElementById('tab-radio').classList.add('hidden');
             document.getElementById('tab-'+tab).classList.remove('hidden');
+            
+            // Visual state update for buttons (simplified logic for this snippet)
+            const buttons = document.querySelectorAll('#media-deck .flex.gap-2 button');
+            buttons.forEach(b => {
+                if(b.textContent.toLowerCase().includes(tab)) {
+                    b.classList.add('bg-white/10', 'text-purple-300', 'shadow-sm');
+                    b.classList.remove('text-gray-400');
+                } else {
+                    b.classList.remove('bg-white/10', 'text-purple-300', 'shadow-sm');
+                    b.classList.add('text-gray-400');
+                }
+            });
         }
 
         let audioObj = new Audio();
         function playRadio(el, url) {
             if(audioObj.src === url && !audioObj.paused) {
                 audioObj.pause();
-                el.classList.remove('bg-white/20');
+                el.classList.remove('bg-white/20', 'border-cyan-500/30');
                 return;
             }
             audioObj.src = url;
             audioObj.play().catch(e => addSystemMessage("Audio Error: "+e.message, "error"));
-            document.querySelectorAll('.bg-white\\/20').forEach(d => d.classList.remove('bg-white/20'));
+            document.querySelectorAll('.bg-white\\/20').forEach(d => {
+                d.classList.remove('bg-white/20', 'border-cyan-500/30', 'border-purple-500/30');
+            });
             el.classList.add('bg-white/20');
         }
 
-        /* --- VISUALS (SIMPLER MAP) --- */
-        function initCosmos() {
-            const canvas = document.getElementById('cosmic-canvas');
+        /* --- VISUALS (GALAXY & MATRIX) --- */
+        let animationFrameId;
+
+        function initGalaxy() {
+            const canvas = document.getElementById('galaxy-canvas');
             const ctx = canvas.getContext('2d');
+            canvas.dataset.mode = 'galaxy';
+            
             let w = canvas.width = window.innerWidth;
             let h = canvas.height = window.innerHeight;
             
-            const stars = Array(100).fill().map(() => ({
+            // Star parameters
+            const stars = Array(200).fill().map(() => ({
                 x: Math.random() * w,
                 y: Math.random() * h,
-                size: Math.random() * 2 + 1, 
-                opacity: Math.random() * 0.5 + 0.1, 
-                speed: Math.random() * 0.05 + 0.02 
+                z: Math.random() * 2, // depth
+                o: Math.random(), // opacity
+                s: Math.random() * 2 // size
             }));
+            
+            // Mouse interaction
+            let mouseX = w / 2;
+            let mouseY = h / 2;
+            window.addEventListener('mousemove', e => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
 
             function draw() {
-                ctx.clearRect(0, 0, w, h);
+                if (canvas.dataset.mode !== 'galaxy') return;
+                
+                // Trail effect
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(0, 0, w, h);
                 
                 stars.forEach(s => {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
+                    // Move stars towards camera or sideways based on mouse
+                    const dx = (mouseX - w/2) * 0.005 * s.z;
+                    const dy = (mouseY - h/2) * 0.005 * s.z;
+                    
+                    s.x -= dx;
+                    s.y -= dy;
+                    
+                    // Wrap around
+                    if (s.x < 0) s.x = w;
+                    if (s.x > w) s.x = 0;
+                    if (s.y < 0) s.y = h;
+                    if (s.y > h) s.y = 0;
+                    
+                    const size = s.s + (s.z * 0.5);
+                    const opacity = s.o * (0.5 + Math.random() * 0.5);
+                    
+                    ctx.fillStyle = `rgba(168, 85, 247, ${opacity})`; // Purple stars
+                    if (Math.random() > 0.9) ctx.fillStyle = `rgba(34, 211, 238, ${opacity})`; // Cyan stars
+
                     ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                    ctx.arc(s.x, s.y, size, 0, Math.PI * 2);
                     ctx.fill();
                     
-                    s.y -= s.speed;
-                    
-                    if(s.y < 0) {
-                        s.y = h;
-                        s.x = Math.random() * w;
+                    // Add glow to some stars
+                    if(s.s > 1.5) {
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = ctx.fillStyle;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
                     }
                 });
                 
-                requestAnimationFrame(draw);
+                animationFrameId = requestAnimationFrame(draw);
             }
+            if(animationFrameId) cancelAnimationFrame(animationFrameId);
             draw();
             
             window.addEventListener('resize', () => {
@@ -1700,9 +1764,9 @@ location.reload();
         }
 
         function initMatrix() {
-            const canvas = document.getElementById('matrix-canvas');
-            if(canvas.dataset.running === "true") return;
-            canvas.dataset.running = "true";
+            const canvas = document.getElementById('galaxy-canvas');
+            if(canvas.dataset.mode === 'matrix') return;
+            canvas.dataset.mode = 'matrix';
             
             const ctx = canvas.getContext('2d');
             let w = canvas.width = window.innerWidth;
@@ -1712,56 +1776,46 @@ location.reload();
             const ypos = Array(cols).fill(0);
             
             function matrix() {
-                ctx.fillStyle = '#0001';
+                if (canvas.dataset.mode !== 'matrix') return;
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
                 ctx.fillRect(0, 0, w, h);
-                ctx.fillStyle = '#0f0';
+                
+                ctx.fillStyle = '#0f0'; // Classic Green
                 ctx.font = '15pt monospace';
                 
                 ypos.forEach((y, ind) => {
                     const text = String.fromCharCode(Math.random() * 128);
                     const x = ind * 20;
+                    
+                    // Random color variation
+                    if(Math.random() > 0.95) ctx.fillStyle = '#fff';
+                    else ctx.fillStyle = '#0f0';
+
                     ctx.fillText(text, x, y);
+                    
                     if (y > 100 + Math.random() * 10000) ypos[ind] = 0;
                     else ypos[ind] = y + 20;
                 });
+                animationFrameId = setTimeout(matrix, 50);
             }
-            setInterval(matrix, 50);
+            if(animationFrameId) cancelAnimationFrame(animationFrameId);
+            matrix();
         }
     </script>
 
 
-
-markdown
-# README
-
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Matrix Animation](#matrix-animation)
-3. [Starfield Animation](#starfield-animation)
-
-## Introduction
-This project consists of two animations: a matrix-style animation and a starfield animation.
-
-## Matrix Animation
-The matrix animation is a simple, scrolling text effect. It uses the `<canvas>` element to render the animation.
-
-### Features
-* The animation is updated every 50 milliseconds using `setInterval`.
-* The text is rendered in a monospace font, with each character having a random value between 0 and 127.
-* The `ypos` array keeps track of the y-position of each column of text.
-
-## Starfield Animation
-The starfield animation is a simple, parallax-style animation. It uses the `<canvas>` element to render the animation.
-
-### Features
-* The animation is updated using `requestAnimationFrame`.
-* The stars are rendered as small, white circles with a random opacity.
-* The `stars` array keeps track of the position, size, and speed of each star.
-* When a star moves off the top of the screen, it is reset to a random position at the bottom of the screen.
-
-</canvas></canvas></body></html>
-<title>Aš taip noriu</title>
+</body></html>
+function check() {
+    const canvas = document.getElementById('galaxy-canvas');
+    if (canvas.dataset.mode === 'matrix') {
+        console.log('Matrix mode is active');
+    } else {
+        console.log('Matrix mode is not active');
+    }
+}
 
 
-<title>Aš taip noriu</title>
+as = document.title;
 
+document.title = 'as cia'
