@@ -101,30 +101,13 @@
                 transform: translateY(0) scale(1); 
             }
         }
-        .msg-anim { 
-            animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
-        }
-        
-        @keyframes pulse-glow {
-            0%, 100% { 
-                box-shadow: 0 0 5px var(--accent-primary); 
-            }
-            50% { 
-                box-shadow: 0 0 10px var(--accent-primary); 
-            }
-        }
-        .pulse-glow {
-            animation: pulse-glow 2s infinite;
-        }
     </style>
 </head>
 <body>
-    <div class="glass-panel">
-        <!-- Add your content here -->
-    </div>
     <div class="scanlines"></div>
     <script>
         // Add your JavaScript code here
+        hljs.initHighlightingOnLoad();
     </script>
 </body>
 </html>
